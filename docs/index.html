@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;600&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <script type="module" src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"></script>
+    <style>
+      rapi-doc {
+        width:100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <rapi-doc 
+      spec-url="https://raw.githubusercontent.com/dns3l/dns3l/master/openapi.yaml"
+      show-header="false"
+      theme="light"
+      default-schema-tab="schema"
+      render-style="read"
+      schema-hide-read-only="never"
+      schema-hide-write-only="never"
+      show-components="true"
+      use-path-in-nav-bar="false"
+      regular-font="Open Sans" 
+      mono-font="Roboto Mono"> 
+      <div slot="nav-logo" style="display: flex; align-items: center; justify-content: center;"> 
+        <img src="https://raw.githubusercontent.com/dns3l/dns3l/master/dns3l.svg" style="width:100px;"/>
+      </div>
+    </rapi-doc>
+  </body>
+</html>
