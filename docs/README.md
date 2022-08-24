@@ -84,7 +84,29 @@ echo ${ID_TOKEN}
   "name": "Kilgore Trout" }
 ```
 
-The main authorization logic is based on DNS root suffixes by convention. This means the user can read or manipulate everything under `.foo.example.com` and `.bar.example.net`. **You need to model the mapping between allowed root zones per user as groups inside your Active Directory/LDAP DIT**.
+The main authorization logic is based on DNS root suffixes by convention. This means the user can read or manipulate everything under `.foo.example.com` and `.bar.example.net`. **You need to model the mapping between allowed root zones per user as groups inside your Active Directory/LDAP DIT**. A compatible model can look like this:
+
+```ldif
+dn: UID=kilgore,OU=users,DC=example,DC=com
+cn: Kilgore Trout
+displayName: Kilgore Trout
+mail: kilgore@kilgore.trout
+name: Kilgore Trout
+sAMAccountName: kilgore
+uid: kilgore 
+memberOf: CN=read,OU=DNS3L,OU=groups,DC=example,DC=com
+memberOf: CN=write,OU=DNS3L,OU=groups,DC=example,DC=com
+memberOf: CN=foo.example.com,OU=DNS3L,OU=groups,DC=example,DC=com
+memberOf: CN=bar.example.net,OU=DNS3L,OU=groups,DC=example,DC=com
+
+{{#groups}}
+dn: CN={{.}},OU=DNS3L,OU=groups,DC=example,DC=com
+cn: {{.}}
+member: UID=kilgore,OU=users,DC=example,DC=com
+name: {{.}}
+sAMAccountName: {{.}}
+{{/groups}}
+```
 
 Fine grained control between r/w per root zone per user is actually not supported. Nested groups on Active Directory/LDAP level are actually not supported by Dex.
 
