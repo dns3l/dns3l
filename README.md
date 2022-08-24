@@ -10,7 +10,7 @@ provides an API, CLI, UI and a pluggable DNS library, manages renewals and publi
 
 Try the [docs](docs/) for further details...
 
-We are using this repo to handle the project, publishing the [API](openapi.yaml) and simplify deployment.
+We are using this repo to manage the project, publish the [API](openapi.yaml) and simplify deployment.
 
 ## Main components
 
