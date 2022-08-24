@@ -26,21 +26,15 @@ Here DNS3L comes in place. It's a kind of a centralized [ACME client][5] that su
 7. air gap
 8. HTTPS outbound only
 
-## DNS
+## Towards DNS
 
-(Public) DNS is used for ACME validation. And the `CommonName` of your certificate should have a proper `A` or `CNAME`. **AutoDNS** is the DNS3L feature that tries to simplifies the last part.
+(Public) DNS must be used for **ACME DNS-01** validation. And the `CommonName` of your certificate should have a proper `A` or `CNAME`. **AutoDNS** is the DNS3L feature that tries to simplifies the last part.
 
-### ACME DNS-01 validation
+DNS3L provides and utilizes a pluggable DNS library to handle the manifold DNS backends in the field and tries to support initially:
 
-For (public) ACME DNS-01 validation DNS3L tries to support initially...
 * [Open Telekom Cloud (OTC)][10]
-* [desec.io][11]
-
-### AutoDNS
-
-For (internal) AutoDNS creation DNS3L tries to support initially...
-* [PowerDNS][12]
 * [Infoblox][13]
+* [PowerDNS][12]
 
 [10]: https://docs.otc.t-systems.com/dns/
 [11]: https://desec.io/
