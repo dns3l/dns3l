@@ -14,8 +14,8 @@ We are using this repo to handle the project, publishing the [API](openapi.yaml)
 
 ## Main components
 
-* dns3ld backend
-* CLI
+* `dns3ld` backend
+* `dns3l` CLI
 * [UI](https://github.com/dns3l/web)
 * [OIDC provider](https://github.com/dns3l/auth)
 
