@@ -84,7 +84,9 @@ echo ${ID_TOKEN}
   "name": "Kilgore Trout" }
 ```
 
-The main authorization logic is based on DNS root suffixes by convention. This means the user can read or manipulate everything under `.foo.example.com` and `.bar.example.net`. **You need to model the mapping between allowed root zones per user as groups inside your Active Directory/LDAP DIT**. A compatible model can look like this:
+The main authorization logic is based on DNS root suffixes by convention. This means the user can read or manipulate everything under `.foo.example.com` and `.bar.example.net`. Fine grained control between r/w per root zone per user is actually not supported. 
+
+**You need to model the mapping between allowed root zones per user as groups inside your Active Directory/LDAP DIT**. Nested groups on Active Directory/LDAP level are actually not supported by Dex. A compatible model can look like this:
 
 ```ldif
 dn: UID=kilgore,OU=users,DC=example,DC=com
@@ -107,7 +109,5 @@ name: {{.}}
 sAMAccountName: {{.}}
 {{/groups}}
 ```
-
-Fine grained control between r/w per root zone per user is actually not supported. Nested groups on Active Directory/LDAP level are actually not supported by Dex.
 
 Privilege escalation applies if `read` and `write` are both available. A valid token defaults to `write` in case authorization is disabled. In case `email` and `name` are not set any `write` operation is denied. In case `email` is not set certificate claiming is denied.
