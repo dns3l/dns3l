@@ -41,7 +41,7 @@ DNS3L provides and utilizes a pluggable DNS library to handle the manifold DNS b
 [12]: https://doc.powerdns.com/authoritative/
 [13]: https://www.infoblox.com/products/ddi/
 
-## Auth
+## Towards Auth
 
 The software usually runs beyond the Iron Curtain inside the enterprise. Actually we are integrating [Dex][21] OIDCP as auth backend to address modern OAuth2/OIDC patterns and to inject Active Directory/LDAP group memberships into OIDC JWS ID tokens `groups[]` scope. Other enterprise IDM backends than Active Directory/LDAP like GitLab, Atlassian, ... are supported by [Dex][21]. Local user management is (unfortunately) not supported by [Dex][21].
 
@@ -84,10 +84,8 @@ echo ${ID_TOKEN}
   "name": "Kilgore Trout" }
 ```
 
-The main authorization logic is based on DNS root suffixes by convention. This means the user can read or manipulate everything under `.foo.example.com` and `.bar.example.net`. **You need to model the mapping between allowed root zones per user as groups inside your Active Directory/LDAP DIT**. Fine grained control between r/w per root zone per user is actually not supported.
+The main authorization logic is based on DNS root suffixes by convention. This means the user can read or manipulate everything under `.foo.example.com` and `.bar.example.net`. **You need to model the mapping between allowed root zones per user as groups inside your Active Directory/LDAP DIT**.
+
+Fine grained control between r/w per root zone per user is actually not supported. Nested groups on Active Directory/LDAP level are actually not supported by Dex.
 
 Privilege escalation applies if `read` and `write` are both available. A valid token defaults to `write` in case authorization is disabled. In case `email` and `name` are not set any `write` operation is denied. In case `email` is not set certificate claiming is denied.
-
-## Configuration
-
-## Usage
