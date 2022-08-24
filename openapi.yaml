@@ -1,0 +1,1124 @@
+openapi: 3.0.3
+
+info:
+  title: DNS3L API
+  description: |
+    The HTTP API served by DNS3L daemon. It is the API the DNS3L clients uses to communicate
+    with the backend, so everything the clients can do can be done with the API.
+
+    The DNS3L server API.
+    You can find out more about DNS3L at [https://github.com/dta4/dns3l](https://github.com/dta4/dns3l).
+
+    # Errors
+
+    The API uses standard HTTP status codes to indicate the success or failure
+    of the API call. The body of the response will be JSON in the following
+    format:
+
+    ```
+    { "code": 500,
+      "message": "Server error" }
+    ```
+
+    # Versioning
+
+    The API usually changes, so API calls are versioned to ensure that clients don't break.
+    To lock to a specific version of the API, you prefix the URL with its version,
+    for example, call `/v0.42.1/info` to use the v0.42.1 version of the `/info` endpoint.
+    If the API version specified in the URL is not supported by the daemon,
+    a HTTP `400 Bad Request` error message is returned.
+
+    If you omit the version-prefix, the current version of the API is used.
+    Using the API without a version-prefix is deprecated and will be removed in a future release.
+
+    DNS3L releases in the near future should support this version of the API,
+    so your client will continue to work even if it is talking to a newer daemon.
+
+    The API uses an open schema model, which means server may add extra properties
+    to responses. Likewise, the server will ignore any extra query parameters and
+    request body properties. When you write clients, you need to ignore additional
+    properties in responses to ensure they do not break when talking to newer
+    daemons.
+
+    # Authentication and authorization
+
+    Authentication is handled client side. The client has to send an OIDC ID Token
+    to various endpoints via `Authorization: Bearer <token>`.
+    The ID Token is validated and must contain a none empty `groups`
+    claim that include a list of groups the end user is a member of.
+    Group names enforcing authorization by convention.
+    Valid group names are `read`, `write` and `{root zone}`.
+
+    ```
+    groups: [
+      "write",
+      "example.com",
+      "foo.example.net" ]
+    ```
+
+    This gives the end user read and write access to specified root zone suffixes.
+    Splitting r/w access to different root zones is actually not supported.
+  contact:
+    url: https://github.com/dta4/dns3l/discussions
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.5.0
+
+externalDocs:
+  description: Find out more about DNS3L
+  url: https://github.com/dta4/dns3l
+
+servers:
+- url: https://dns3l.example.com/api/v1
+
+tags:
+- name: info
+  description: About versions and contacts
+- name: dns
+  description: Something about DNS
+- name: ca
+  description: Everything about CA
+  externalDocs:
+    description: Find out more
+    url: https://github.com/iaean/dns3l/blob/master/dns3ld.config.hjson
+- name: crt
+  description: Access to X.509 certificates
+  externalDocs:
+    description: Find out more
+    url: https://github.com/iaean/dns3l/blob/master/dns3ld.config.hjson
+
+paths:
+  /info:
+    get:
+      tags:
+      - info
+      operationId: getInfo
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/INFO'
+      security:
+      - {}
+      - oauth:
+        - write:dns
+        - read:dns
+
+  /dns:
+    get:
+      tags:
+      - dns
+      summary: Info about available DNS provider
+      operationId: getDNS
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DNS'
+      security:
+      - {}
+      - oauth:
+        - write:dns
+        - read:dns
+  /dns/rtzn:
+    get:
+      tags:
+      - dns
+      summary: Info about allowed DNS suffixes
+      operationId: getRootDNS
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ROOT'
+      security:
+      - {}
+      - oauth:
+        - write:dns
+        - read:dns
+
+  /ca:
+    get:
+      tags:
+      - ca
+      summary: Info about all available CAs
+      x-badges:
+        - color: red
+          label: 'mandatory'
+        - color: blue
+          label: 'config'
+      operationId: getCAs
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CA'
+      security:
+      - {}
+      - oauth:
+        - write:ca
+        - read:ca
+  /ca/{caId}:
+    get:
+      tags:
+      - ca
+      summary: Info about dedicated CA
+      x-badges:
+        - color: red
+          label: 'mandatory'
+        - color: blue
+          label: 'config'
+      operationId: getCAById
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CA'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - {}
+      - oauth:
+        - write:ca
+        - read:ca
+  /ca/{caId}/crt:
+    get:
+      tags:
+      - crt
+      summary: Info about all available certificates from CA
+      x-badges:
+        - color: red
+          label: 'mandatory'
+        - color: blue
+          label: 'config'
+      operationId: getCertsByCA
+      parameters:
+      - $ref: '#/components/parameters/crtSearch'
+      - $ref: '#/components/parameters/caId'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CRT'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - {}
+      - oauth:
+        - write:ca
+        - read:ca
+    post:
+      tags:
+      - crt
+      summary: Claim certificate from ACME CA
+      x-badges:
+        - color: red
+          label: 'mandatory'
+        - color: orange
+          label: 'slow'
+      description: '**Only** allowed for **ACME** CA. Error thrown otherwise.'
+      operationId: claimCertByName
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CLAIM'
+        required: true
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/Bad'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+  /ca/{caId}/csr:
+    post:
+      tags:
+      - crt
+      summary: Create CSR for none ACME CA
+      description: '**Only** allowed for **none** ACME CA. Error thrown otherwise.'
+      operationId: createCSRByName
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CSR'
+        required: true
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/Bad'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+  /ca/{caId}/crt/{crtName}:
+    get:
+      tags:
+      - crt
+      summary: Info about dedicated certificate
+      x-badges:
+        - color: red
+          label: 'mandatory'
+      operationId: getCertByName
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CRT'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - {}
+      - oauth:
+        - write:ca
+        - read:ca
+    delete:
+      tags:
+      - crt
+      summary: Delete dedicated certificate
+      x-badges:
+        - color: red
+          label: 'mandatory'
+      operationId: delCertByName
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+
+  /ca/{caId}/crt/{crtName}/pem:
+    get:
+      tags:
+      - crt
+      summary: Get dedicated certificate and chain
+      x-badges:
+        - color: red
+          label: 'mandatory'
+      operationId: getChainByName
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PEM'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+        - read:ca
+    post:
+      tags:
+      - crt
+      summary: Push dedicated certificate and chain to none ACME CA
+      description: '**Only** allowed for **none** ACME CA. Error thrown otherwise.'
+      operationId: addChainByName
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PEM'
+        required: true
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/Bad'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+    put:
+      tags:
+      - crt
+      summary: Forced push dedicated certificate and chain to none ACME CA
+      description: '**Only** allowed for **none** ACME CA. Error thrown otherwise.'
+      operationId: modChainByName
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PEM'
+        required: true
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+        400:
+          $ref: '#/components/responses/Bad'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+
+  /ca/{caId}/crt/{crtName}/pem/crt:
+    get:
+      tags:
+      - crt
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                readOnly: true
+                example: |
+                  -----BEGIN CERTIFICATE-----
+                  MIICWzCCAgKgAwIBAgIRAPdJH+BDh/90UFkQvvmIgtMwCgYIKoZIzj0EAwIwgYsx
+                  CzAJBgNVBAYTAkRFMQ8wDQYDVQQIEwZIZXNzZW4xEjAQBgNVBAcTCURhcm1zdGFk
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END CERTIFICATE-----
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+        - read:ca
+  /ca/{caId}/crt/{crtName}/pem/key:
+    get:
+      tags:
+      - crt
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                readOnly: true
+                example: |
+                  -----BEGIN RSA PRIVATE KEY-----
+                  MIICWzCCAgKgAwIBAgIRAPdJH+BDh/90UFkQvvmIgtMwCgYIKoZIzj0EAwIwgYsx
+                  CzAJBgNVBAYTAkRFMQ8wDQYDVQQIEwZIZXNzZW4xEjAQBgNVBAcTCURhcm1zdGFk
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END RSA PRIVATE KEY-----
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+        - read:ca
+  /ca/{caId}/crt/{crtName}/pem/fullchain:
+    get:
+      tags:
+      - crt
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                readOnly: true
+                example: |
+                  -----BEGIN CERTIFICATE-----
+                  MIICWzCCAgKgAwIBAgIRAPdJH+BDh/90UFkQvvmIgtMwCgYIKoZIzj0EAwIwgYsx
+                  CzAJBgNVBAYTAkRFMQ8wDQYDVQQIEwZIZXNzZW4xEjAQBgNVBAcTCURhcm1zdGFk
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END CERTIFICATE-----
+                  -----BEGIN CERTIFICATE-----
+                  CzAJBgNVBAYTAkRFMQ8wDQYDVQQIEwZIZXNzZW4xEjAQBgNVBAcTCURhcm1zdGFk
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END CERTIFICATE-----
+                  -----BEGIN CERTIFICATE-----
+                  MIICWzCCAgKgAwIBAgIRAPdJH+BDh/90UFkQvvmIgtMwCgYIKoZIzj0EAwIwgYsx
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END CERTIFICATE-----
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+        - read:ca
+
+  /crt:
+    get:
+      tags:
+      - crt
+      summary: Info about all available certificates from all CAs
+      x-badges:
+        - color: blue
+          label: 'config'
+      operationId: getCerts
+      parameters:
+      - $ref: '#/components/parameters/crtSearch'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CACRT'
+      security:
+      - {}
+      - oauth:
+        - write:ca
+        - read:ca
+  /crt/{crtName}:
+    get:
+      tags:
+      - crt
+      summary: Info about dedicated certificate from all CAs
+      x-badges:
+        - color: blue
+          label: 'config'
+      operationId: getCertsByName
+      parameters:
+        - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CACRT'
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - {}
+      - oauth:
+        - write:ca
+        - read:ca
+    delete:
+      tags:
+      - crt
+      summary: Delete dedicated certificate from all CAs
+      operationId: delCertsByName
+      parameters:
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - oauth:
+        - write:ca
+
+components:
+  responses:
+    Error:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+                default: 500
+              message:
+                type: string
+                example: Unexpected error
+    Bad:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+                default: 400
+              message:
+                type: string
+                example: Bad request
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+                default: 403
+              message:
+                type: string
+                example: Access denied
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+                default: 404
+              message:
+                type: string
+                example: Ressource not found
+
+  parameters:
+    crtName:
+      name: crtName
+      in: path
+      description: FQDN as certificate name
+      required: true
+      schema:
+        type: string
+        format: hostname
+    caId:
+      name: caId
+      in: path
+      description: ID of CA
+      required: true
+      schema:
+        type: string
+    crtSearch:
+      name: search
+      in: query
+      description: Search for certificates
+      required: false
+      schema:
+        type: string
+      examples:
+        search:
+          summary: FQDN certificate name glob
+          description: |
+            Shell style search glob or PCRE to control the returned result set. We try to avoid implementing pagination.
+
+            `a*.acme.com` returns only certificates for `.acme.com` beginning with letter `a`
+          value: '*.acme.com'
+
+  schemas:
+    INFO:
+      type: object
+      required: [ version ]
+      description: Versions and contacts
+      properties:
+        version:
+          type: object
+          readOnly: true
+          description: API and daemon version
+          properties:
+            daemon:
+              type: string
+              readOnly: true
+              description: Daemon version
+              example: 0.8.15
+            api:
+              type: string
+              readOnly: true
+              description: API version
+              example: 0.47.11
+        contact:
+          type: object
+          readOnly: true
+          description: Contact hints
+          properties:
+            url:
+              type: string
+              format: uri
+              nullable: true
+              description: CA URL
+              readOnly: true
+              example: https://dns3l.example.com/
+            email:
+              type: array
+              readOnly: true
+              description: '{caId} list'
+              items:
+                type: string
+                format: email
+              example:
+                - jane.doe@example.com
+                - john.doe@example.com
+
+    ROOT:
+      type: object
+      required: [ root, acmedns, ca ]
+      description: '### Allowed DNS root suffixes
+
+        * ACME DNS-01 supporting provider MUST implement `TXT`
+
+        * DNS3L AutoDNS supporting provider MUST implement `A`'
+      properties:
+        root:
+          type: string
+          readOnly: true
+          description: Domain suffix a FQDN MUST have
+          example: .acme.org
+        autodns:
+          type: string
+          nullable: true
+          readOnly: true
+          description: DNS provider plugin responsible for DNS3L AutoDNS
+          example: infblx
+        acmedns:
+          type: string
+          nullable: true
+          readOnly: true
+          description: DNS provider plugin responsible for ACME DNS-01
+          example: otc
+        ca:
+          $ref: '#/components/schemas/CAS'
+
+    DNS:
+      type: object
+      required: [ id, name, feature, zoneNesting ]
+      description: '### Supported DNS provider plugins
+
+        * ACME DNS-01 supporting provider MUST implement `TXT`
+
+        * DNS3L AutoDNS supporting provider MUST implement `A`'
+      properties:
+        id:
+          type: string
+          readOnly: true
+          description: Unique provider plugin ID
+          example: otc
+        name:
+          type: string
+          readOnly: true
+          description: Descriptive provider plugin name
+          example: Open Telekom Cloud (OTC) DNS
+        feature:
+          type: array
+          readOnly: true
+          description: Supported DNS Ressource Record Types
+          items:
+            type: string
+            enum:
+            - A
+            - TXT
+            - CNAME
+          example: [ A, TXT ]
+        zoneNesting:
+          type: boolean
+          readOnly: true
+          description: Zone nesting support
+          example: true
+
+    CAS:
+      type: array
+      readOnly: true
+      description: '{caId} list'
+      items:
+        type: string
+      example:
+      - le
+      - step
+      - tsec
+
+    CA:
+      type: object
+      required: [ id, name, type, acme, rtzn, enabled ]
+      description: CA configured by DNS3L
+      properties:
+        id:
+          type: string
+          readOnly: true
+          description: Unique supported CA ID
+          example: acme
+        name:
+          type: string
+          readOnly: true
+          description: Descriptive CA name
+          example: ACME Inc. public CA
+        desc:
+          type: string
+          readOnly: true
+          description: CA description
+          example: My favorite CA ever.
+        logo:
+          type: string
+          format: uri
+          description: CA avatar URI
+          readOnly: true
+          example: /logo.png
+        url:
+          type: string
+          format: uri
+          nullable: true
+          description: CA URL
+          readOnly: true
+          example: https://ca.acme.org/
+        roots:
+          type: string
+          format: uri
+          nullable: true
+          description: CA root certificates program URL
+          readOnly: true
+          example: https://ca.acme.org/roots/
+        totalValid:
+          type: integer
+          format: int32
+          nullable: true
+          readOnly: true
+          description: Number of issued valid X.509 certificates
+          example: 11
+        totalIssued:
+          type: integer
+          format: int32
+          nullable: true
+          readOnly: true
+          description: Total number of issued X.509 certificates
+          example: 47
+        type:
+          type: string
+          readOnly: true
+          description: Private or public (CT enforcing) CA
+          enum:
+          - public
+          - private   
+        acme:
+          type: boolean
+          readOnly: true
+          description: ACME capable CA
+          example: true
+        rtzn:
+          type: array
+          readOnly: true
+          description: Root domain suffixes CA supports
+          items:
+            type: string
+          example:
+          - .foo.acme.org
+          - .bar.acme.com
+        enabled:
+          type: boolean
+          readOnly: true
+          description: CA enabled for usage
+          example: true
+
+    CSR:
+      type: object
+      required: [ name, wildcard ]
+      description: Parameters for leaf entity certs
+      properties:
+        name:
+          type: string
+          format: hostname
+          description: FQDN as certificate name
+          writeOnly: true
+          example: foo.bar.acme.org
+        wildcard:
+          type: boolean
+          description: 'Ask for a wildcard i.e. add `*.`. No AutoDNS allowed.'
+          writeOnly: true
+          example: false
+          default: false
+        san:
+          type: array
+          description: 'List of additional DNS: SAN'
+          writeOnly: true
+          nullable: true
+          items:
+            type: string
+            format: hostname
+          example:
+          - foo.acme.com
+          - bar.acme.net
+        hints:
+          type: object
+          description: Hints that DNS3L could follow for CSR
+          writeOnly: true
+          nullable: true
+          properties:
+            kty:
+              type: string
+              description: Private key type
+              enum:
+              - RSA
+              - EC
+              - OKP
+              default: RSA
+            crv:
+              type: string
+              description: Private key curve
+              enum:
+              - P-256
+              - P-384
+              - P-521
+              - Ed25519
+              default: P-256
+            size:
+              type: integer
+              format: int32
+              description: Private key length
+              default: 2048
+              example: 128
+            ttl:
+              type: string
+              description: TTL proposal
+              example: 30d
+            subject:
+              type: string
+              description: Subject proposal
+              example: 'C=DE,O=ACME Inc.,OU=DNS3L,CN=foo.bar.acme.org'
+            keyUsage:
+              type: array
+              items:
+                type: string
+              example: ["keyEncipherment", "dataEncipherment", "digitalSignature"]
+            extKeyUsage:
+              type: array
+              items:
+                type: string
+              example: ["serverAuth"]
+
+    CLAIM:
+      type: object
+      required: [ name, wildcard ]
+      description: Parameters for leaf entity certs
+      properties:
+        name:
+          $ref: '#/components/schemas/CSR/properties/name'
+        wildcard:
+          $ref: '#/components/schemas/CSR/properties/wildcard'
+        san:
+          $ref: '#/components/schemas/CSR/properties/san'
+        autodns:
+          type: object
+          description: no wildcard allowed if true
+          default: null
+          writeOnly: true
+          nullable: true
+          properties:
+            ipv4:
+              type: string
+              description: IP for FQDN
+              format: ipv4
+          example: { ipv4: "10.1.2.3" }
+        hints:
+          $ref: '#/components/schemas/CSR/properties/hints'
+
+    CRT:
+      type: object
+      required: [ name, claimedBy, claimedOn, valid, validTo, wildcard, subjectCN, issuerCN ]
+      description: Parameters for leaf entity certs
+      properties:
+        name:
+          type: string
+          description: FQDN as certificate name
+          format: hostname
+          readOnly: true
+          example: foo.bar.acme.org
+        claimedBy:
+          type: object
+          properties:
+            name:
+              type: string
+              example: John Doe
+            email:
+              type: string
+              format: email
+              example: joe@acme.org
+          readOnly: true
+        claimedOn:
+          type: string
+          format: date-time
+          readOnly: true
+        validTo:
+          type: string
+          format: date-time
+          readOnly: true
+        valid:
+          type: boolean
+          readOnly: true
+        renewCount:
+          type: integer
+          format: int64
+          example: 5
+        wildcard:
+          type: boolean
+          readOnly: true
+          example: false
+        subjectCN:
+          type: string
+          format: hostname
+          readOnly: true
+          example: foo.bar.acme.org
+        issuerCN:
+          type: string
+          readOnly: true
+          example: ACME Intermediate CA
+        serial:
+          type: string
+          readOnly: true
+          example: "195498333871163410720609874766089222227"
+
+    CACRT:
+      type: object
+      required: [ name, ca, claimedBy, claimedOn, valid, validTo, wildcard, subjectCN, issuerCN ]
+      properties:
+        name:
+          $ref: '#/components/schemas/CRT/properties/name'
+        ca:
+          $ref: '#/components/schemas/CAS'
+        claimedBy:
+          $ref: '#/components/schemas/CRT/properties/claimedBy'
+        claimedOn:
+          $ref: '#/components/schemas/CRT/properties/claimedOn'
+        validTo:
+          $ref: '#/components/schemas/CRT/properties/validTo'
+        valid:
+          $ref: '#/components/schemas/CRT/properties/valid'
+        renewCount:
+          $ref: '#/components/schemas/CRT/properties/renewCount'
+        wildcard:
+          $ref: '#/components/schemas/CRT/properties/wildcard'
+        subjectCN:
+          $ref: '#/components/schemas/CRT/properties/subjectCN'
+        issuerCN:
+          $ref: '#/components/schemas/CRT/properties/issuerCN'
+        serial:
+          $ref: '#/components/schemas/CRT/properties/serial'
+
+    PEM:
+      type: object
+      required: [ cert, key, chain, root ]
+      properties:
+        cert:
+          type: string
+          description: The leaf certificate PEM encoded
+          example: "-----BEGIN CERTIFICATE-----\n..\n-----END CERTIFICATE-----\n"
+        key:
+          type: string
+          description: The unencrypted private key PEM encoded
+          example: "-----BEGIN RSA PRIVATE KEY-----\n..\n-----END RSA PRIVATE KEY-----\n"
+        chain:
+          type: string
+          description: All intermediate certificate(s) PEM encoded
+          example: "-----BEGIN CERTIFICATE-----\n..\n-----END CERTIFICATE-----\n"
+        root:
+          type: string
+          description: The root certificate PEM encoded
+          example: "-----BEGIN CERTIFICATE-----\n..\n-----END CERTIFICATE-----\n"
+        fullchain:
+          type: string
+          description: cert + chain + root PEM encoded
+          example: "-----BEGIN CERTIFICATE-----\n+..+..+\n-----END CERTIFICATE-----\n"
+
+  securitySchemes:
+    oauth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /oauth/auth
+          tokenUrl: /oauth/token
+          scopes:
+            write:ca: request certificates from CA
+            read:ca: read CA and certificates
+    oidc:
+      type: openIdConnect
+      openIdConnectUrl: /.well-known/openid-configuration
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
