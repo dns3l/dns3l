@@ -334,9 +334,21 @@ paths:
       tags:
       - crt
       summary: Delete dedicated certificate
+      description: |
+        If the CA supports revocation the server MUST try to revoke the certificate.
+        If revocation fails the server can delete all certificate artefacts from it's data store.
+        The server SHOULD inform the client about the final result of the revocation attempt.
+        If the CA doesn't support revocation, the server can delete all certificate artefacts from it's data store immediately.
+
+        ```
+        { "code": 200,
+          "message": "Revocation successfull | failed | unavailable" }
+        ```
       x-badges:
         - color: red
           label: 'mandatory'
+        - color: orange
+          label: 'slow'
       operationId: delCertByName
       parameters:
       - $ref: '#/components/parameters/caId'
