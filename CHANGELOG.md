@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/dns3l/dns3l/compare/v1.0.0...v1.0.1) (2022-08-26)
+
+
+### Bug Fixes
+
+* **api:** about revocation on DELETE ([5c44e1c](https://github.com/dns3l/dns3l/commit/5c44e1c6359698d2b090db9c87bab164859ffeff))
+
 # 1.0.0 (2022-08-24)
 
 
