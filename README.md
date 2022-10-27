@@ -12,22 +12,43 @@ Try the [docs](docs/) for further details...
 
 We are using this repo to manage the project, publish the [API](openapi.yaml) and simplify deployment.
 
-## Main components
+We are releasing docker images and binaries for some platforms. For quick deployment there is a `docker compose` stack that provides main components:
 
-* `dns3ld` backend
-* `dns3l` CLI
-* [UI](https://github.com/dns3l/web)
-* [OIDC provider](https://github.com/dns3l/auth)
+| component | source | endpoint note |
+| --- | --- | --- |
+| ingress proxy | https://github.com/dns3l/ingress | `DNS3L_FQDN` default: `localhost` |
+| dns3ld | https://github.com/dns3l/dns3l-core | `https://${DNS3L_FQDN}/api` |
+| OIDC middleware | https://github.com/dns3l/auth | `https://${DNS3L_FQDN}/auth` |
+| UI | https://github.com/dns3l/web | `https://${DNS3L_FQDN}` |
+| smallstep middleware | https://github.com/dns3l/sra | not exposed |
 
 ### Run
 
 ```bash
-docker-compose -f stack.yml up
+docker compose -f stack.yml up
+```
+
+Stack uses per default `.env/..` for configuration.
+
+### Build via docker
+
+```bash
+git clone https://github.com/dns3l/dns3l
+git clone https://github.com/dns3l/ingress dns3lingress
+git clone https://github.com/dns3l/dns3l-core dns3lcore
+git clone https://github.com/dns3l/auth dns3lauth
+git clone https://github.com/dns3l/sra dns3lsra
+git clone https://github.com/dns3l/web dns3lweb
+
+cd dns3l
+
+docker compose -f build.yml build
+docker compose -f build.yml up
 ```
 
 ## Contribution
 
-You are welcome! Please do not hesitate to contact us with any improvements of this work.
+You are welcome! Please do not hesitate to contact us via PR, Issue or Discussion. For your PR use common [GitHub flow](https://github.com/dns3l/dns3l/wiki/GitHub-Workflow).
 
 ## License
 
