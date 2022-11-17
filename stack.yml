@@ -1,0 +1,85 @@
+# docker stack deploy -c stack.yml dns3l
+# or: docker-compose -f stack.yml up [--build]
+# visit: http[s]://swarm-ip, http[s]://localhost, or http[s]://host-ip
+
+version: '3.1'
+
+services:
+  db:
+    image: mariadb
+    container_name: dns3l-mariadb
+    restart: always
+    # environment:
+    #   MARIADB_ROOT_PASSWORD: secret
+    env_file:
+      .env/db
+    volumes:
+      - dns3l-db:/var/lib/mysql
+    networks:
+      - dns3l
+    dns_search: .
+
+  ingress:
+    image: ghcr.io/dns3l/ingress
+    container_name: dns3l-ingress
+    restart: always
+    # volumes:
+    #   - .env/nginx.conf:/etc/nginx.conf:ro
+    env_file:
+      .env/ingress
+    networks:
+      - dns3l
+    dns_search: .
+    ports:
+      - 443:443
+    depends_on:
+      - auth
+      - dns3ld
+      # - web
+
+  sra:
+    image: ghcr.io/dns3l/sra
+    container_name: dns3l-sra
+    restart: always
+    # volumes:
+    #   - .env/stepca.conf:/etc/stepca.conf.json:ro
+    env_file:
+      .env/sra
+    networks:
+      - dns3l
+    dns_search: .
+    depends_on:
+      - db
+
+  auth:
+    image: ghcr.io/dns3l/auth
+    container_name: dns3l-auth
+    restart: always
+    # volumes:
+    #   - .env/dex.conf:/etc/dex.conf.yml:ro
+    env_file:
+      .env/auth
+    networks:
+      - dns3l
+    dns_search: .
+
+  dns3ld:
+    image: ghcr.io/dns3l/dns3ld
+    container_name: dns3l-dns3ld
+    restart: always
+    volumes:
+      - .env/dns3ld.conf:/etc/dns3ld.conf.yml:ro
+    env_file:
+      .env/dns3ld
+    networks:
+      - dns3l
+    dns_search: .
+    depends_on:
+      - db
+
+volumes:
+  dns3l-db:
+
+networks:
+  dns3l:
+    external: false
