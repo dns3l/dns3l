@@ -34,7 +34,7 @@ services:
       - 443:443
     depends_on:
       - auth
-      # - dns3ld
+      - dns3ld
       # - web
 
   sra:
