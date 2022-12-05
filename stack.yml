@@ -34,7 +34,9 @@ services:
       - 443:443
     depends_on:
       - auth
+      - auth1
       - dns3ld
+      - dns3ld0x13
       # - web
 
   sra:
@@ -51,6 +53,7 @@ services:
     depends_on:
       - db
 
+  # stack internal auth
   auth:
     image: ghcr.io/dns3l/auth
     container_name: dns3l-auth
@@ -63,6 +66,20 @@ services:
       - dns3l
     dns_search: .
 
+  # stack external auth1..n
+  auth1:
+    image: ghcr.io/dns3l/auth
+    container_name: dns3l-auth1
+    restart: always
+    # volumes:
+    #   - .env/dex.conf:/etc/dex.conf.yml:ro
+    env_file:
+      .env/auth1
+    networks:
+      - dns3l
+    dns_search: .
+
+  # stack external daemon
   dns3ld:
     image: ghcr.io/dns3l/dns3ld
     container_name: dns3l-dns3ld
@@ -76,6 +93,23 @@ services:
     dns_search: .
     depends_on:
       - db
+
+  # Workaround: stack internal daemon
+  #   https://github.com/dns3l/dns3l-core/issues/19
+  # dns3ld0x13:
+  #   image: ghcr.io/dns3l/dns3ld
+  #   container_name: dns3l-dns3ld0x13
+  #   restart: always
+  #   volumes:
+  #     - .env/dns3ld0x13.conf:/etc/dns3ld.conf.yml:ro
+  #   env_file:
+  #     .env/dns3ld0x13
+  #   networks:
+  #     - dns3l
+  #   dns_search: .
+  #   depends_on:
+  #     - db
+  #     - auth
 
 volumes:
   dns3l-db:
