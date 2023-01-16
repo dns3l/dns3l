@@ -34,9 +34,6 @@ services:
       - 443:443
     depends_on:
       - auth
-      - auth1
-      - dns3ld
-      - dns3ld0x13
       # - web
 
   sra:
@@ -45,6 +42,10 @@ services:
     restart: always
     # volumes:
     #   - .env/stepca.conf:/etc/stepca.conf.json:ro
+    # environment:
+    #   HTTP_PROXY:
+    #   HTTPS_PROXY:
+    #   NO_PROXY:
     env_file:
       .env/sra
     networks:
@@ -72,7 +73,7 @@ services:
     container_name: dns3l-auth1
     restart: always
     # volumes:
-    #   - .env/dex.conf:/etc/dex.conf.yml:ro
+    #   - .env/dex1.conf:/etc/dex.conf.yml:ro
     env_file:
       .env/auth1
     networks:
@@ -86,6 +87,10 @@ services:
     restart: always
     volumes:
       - .env/dns3ld.conf:/etc/dns3ld.conf.yml:ro
+    # environment:
+    #   HTTP_PROXY:
+    #   HTTPS_PROXY:
+    #   NO_PROXY:
     env_file:
       .env/dns3ld
     networks:
@@ -93,23 +98,8 @@ services:
     dns_search: .
     depends_on:
       - db
-
-  # Workaround: stack internal daemon
-  #   https://github.com/dns3l/dns3l-core/issues/19
-  # dns3ld0x13:
-  #   image: ghcr.io/dns3l/dns3ld
-  #   container_name: dns3l-dns3ld0x13
-  #   restart: always
-  #   volumes:
-  #     - .env/dns3ld0x13.conf:/etc/dns3ld.conf.yml:ro
-  #   env_file:
-  #     .env/dns3ld0x13
-  #   networks:
-  #     - dns3l
-  #   dns_search: .
-  #   depends_on:
-  #     - db
-  #     - auth
+      - ingress
+      - auth
 
 volumes:
   dns3l-db:
