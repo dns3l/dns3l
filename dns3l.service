@@ -1,0 +1,15 @@
+[Unit]
+Description=Docker Compose Application DNS3L
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/bin/docker compose -f /opt/dns3l/stack.yml down
+ExecStart=/usr/bin/docker compose -f /opt/dns3l/stack.yml up --force-recreate -d
+ExecStop=/usr/bin/docker compose -f /opt/dns3l/stack.yml down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
