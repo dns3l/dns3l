@@ -47,7 +47,7 @@ info:
     The ID Token is validated and must contain a none empty `groups`
     claim that include a list of groups the end user is a member of.
     Group names enforcing authorization by convention.
-    Valid group names are `read`, `write` and `{root zone}`.
+    Valid group names are `read`, `write` and `{domain suffix}`.
 
     ```
     groups: [
@@ -57,9 +57,12 @@ info:
     ```
 
     This gives the end user read and write access to specified root zone suffixes.
-    Splitting r/w access to different root zones is actually not supported.
+    For example `a.b.foo.example.net` and `x.y.foo.example.net`. Splitting r/w access to different root zones is actually not supported.
+  
+    Authorization is enforced server side. The server MUST implement AuthZ for any path that publishes key material. The server MAY implement optional AuthZ for any other read only (GET) path.
+
   contact:
-    url: https://github.com/dta4/dns3l/discussions
+    url: https://github.com/dns3l/dns3l/discussions
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -67,7 +70,7 @@ info:
 
 externalDocs:
   description: Find out more about DNS3L
-  url: https://github.com/dta4/dns3l
+  url: https://github.com/dns3l/dns3l
 
 servers:
 - url: https://dns3l.example.com/api/v1
@@ -253,7 +256,10 @@ paths:
           label: 'mandatory'
         - color: orange
           label: 'slow'
-      description: '**Only** allowed for **ACME** CA. Error thrown otherwise.'
+      description: |
+        **Only** allowed for **ACME** CA. Error thrown otherwise.
+        
+        Towards **AutoDNS**: The server MUST ensure that this handled transactional from client perspective. Because its much harder to let a cert end in smoke the server SHOULD process AutoDNS first and do a AutoDNS rollback in case ACME fails.
       operationId: claimCertByName
       parameters:
       - $ref: '#/components/parameters/caId'
@@ -472,6 +478,7 @@ paths:
         404:
           $ref: '#/components/responses/NotFound'
       security:
+      - {}
       - oauth:
         - write:ca
         - read:ca
@@ -501,6 +508,64 @@ paths:
         404:
           $ref: '#/components/responses/NotFound'
       security:
+      - oauth:
+        - write:ca
+        - read:ca
+  /ca/{caId}/crt/{crtName}/pem/chain:
+    get:
+      tags:
+      - crt
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                readOnly: true
+                example: |
+                  -----BEGIN CERTIFICATE-----
+                  CzAJBgNVBAYTAkRFMQ8wDQYDVQQIEwZIZXNzZW4xEjAQBgNVBAcTCURhcm1zdGFk
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END CERTIFICATE-----
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - {}
+      - oauth:
+        - write:ca
+        - read:ca
+  /ca/{caId}/crt/{crtName}/pem/root:
+    get:
+      tags:
+      - crt
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                readOnly: true
+                example: |
+                  -----BEGIN CERTIFICATE-----
+                  MIICWzCCAgKgAwIBAgIRAPdJH+BDh/90UFkQvvmIgtMwCgYIKoZIzj0EAwIwgYsx
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END CERTIFICATE-----
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - {}
       - oauth:
         - write:ca
         - read:ca
@@ -538,6 +603,7 @@ paths:
         404:
           $ref: '#/components/responses/NotFound'
       security:
+      - {}
       - oauth:
         - write:ca
         - read:ca
