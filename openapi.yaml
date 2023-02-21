@@ -59,7 +59,9 @@ info:
     This gives the end user read and write access to specified root zone suffixes.
     For example `a.b.foo.example.net` and `x.y.foo.example.net`. Splitting r/w access to different root zones is actually not supported.
   
-    Authorization is enforced server side. The server MUST implement AuthZ for any path that publishes key material. The server MAY implement optional AuthZ for any other read only (GET) path.
+    Authorization is enforced server side.
+    The server MUST implement AuthZ for any path that publishes key material. All potentially existing SAN MUST pass {domain suffix} based AuthZ check.
+    The server MAY implement optional AuthZ for any other read only (GET) path.
 
   contact:
     url: https://github.com/dns3l/dns3l/discussions
