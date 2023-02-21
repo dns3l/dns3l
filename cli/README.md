@@ -10,6 +10,7 @@ dns3l.sh --help
 
 ```bash
 DNS3L_FQDN=dns3l.example.com  # mandatory
+
 CLIENT_ID=      # mandatory (default: dns3l-api)
 CLIENT_SECRET=  # mandatory
 DNS3L_USER=     # default: current user
