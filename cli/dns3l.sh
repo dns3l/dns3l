@@ -54,10 +54,25 @@ DNS3L_URL=https://${DNS3L_FQDN:-"localhost"}/api # http://dns3ld:8880/api
 AUTH_URL=https://${DNS3L_FQDN:-"localhost"}/auth # https://auth:5554/auth
 CLIENT_ID=${CLIENT_ID:-"dns3l-api"}
 CLIENT_SECRET=${CLIENT_SECRET:-"secret"}
-USER=${DNS3L_USER:-${USER,,}} # TODO: USERNAME, USER, LOGNAME
-PASS=${DNS3L_PASS:-""}
-if [ -z "${PASS}" ]; then
-  read -sp "Password for ${USER}: " PASS
+
+AUTH_USER=${DNS3L_USER:-""}
+if [ -z "${AUTH_USER}" ]; then
+  set +u
+  if [ -n "${USERNAME}" ]; then
+    AUTH_USER=${USERNAME,,}
+  elif [ -n "${USER}" ]; then
+    AUTH_USER=${USER,,}
+  elif [ -n "${LOGNAME}" ]; then
+    AUTH_USER=${LOGNAME,,}
+  else
+    echo "Oooops. No user found." >&2
+    exit 3
+  fi
+  set -u
+fi
+AUTH_PASS=${DNS3L_PASS:-""}
+if [ -z "${AUTH_PASS}" ]; then
+  read -sp "Password for ${AUTH_USER}: " AUTH_PASS
   echo >&2
 fi
 if [ -z "${_arg_skiptls#off}" ]; then
@@ -71,15 +86,15 @@ if [[ -z ${TOKEN_URL} ]]; then
   echo "Oooops. No token URL from ${AUTH_URL}/.well-known/openid-configuration." >&2
   exit 5
 fi
-echo "Feeding ID token from ${TOKEN_URL}..." >&2
+echo "Feeding ID token for ${AUTH_USER} from ${TOKEN_URL}..." >&2
 ID_TOKEN=`curl "${CURL_OPTS[@]}" -X POST -u "${CLIENT_ID}:${CLIENT_SECRET}" \
-  -d "grant_type=password&scope=openid profile email groups offline_access&username=${USER}&password=${PASS}" \
+  -d "grant_type=password&scope=openid profile email groups offline_access&username=${AUTH_USER}&password=${AUTH_PASS}" \
   ${TOKEN_URL} | jq -r .id_token`
 if [[ -z ${ID_TOKEN} || ${ID_TOKEN} == "null" ]]; then
   echo "Oooops. Invalid token." >&2
   exit 5
 fi
-echo "ID token for ${USER}: ${ID_TOKEN}" >&2
+echo "ID token for ${AUTH_USER}: ${ID_TOKEN}" >&2
 echo ${ID_TOKEN} | jq -R 'split(".") | .[0] | @base64d | fromjson' >&2 # header
 echo ${ID_TOKEN} | jq -R 'split(".") | .[1] | @base64d | fromjson' >&2 # payload
 
@@ -90,11 +105,13 @@ curl "${CURL_OPTS[@]}" ${DNS3L_URL}/ca | jq --indent 1 . >&2
 
 function list()
 {
+  echo "Certs issued by ${1}..." >&2
   curl "${CURL_OPTS[@]}" -H "Authorization: Bearer ${ID_TOKEN}" ${DNS3L_URL}/ca/${1}/crt | jq --indent 1 .
 }
 
 function delete()
 {
+  echo "Delete ${2}:${1}..." >&2
   curl "${CURL_OPTS[@]}" -X DELETE -H "Authorization: Bearer ${ID_TOKEN}" ${DNS3L_URL}/ca/${1}/crt/${2} | jq --indent 1 .
 }
 
@@ -146,8 +163,8 @@ if (( ${#_arg_ca[@]} > 1 )); then
   # Strip the default...
   for ca in ${_arg_ca[@]:1}; do
     if [[ "${ca,,}" == "any" ]]; then
-      # Review: TODO, Feed from API
-      _cas=("les" "le" "d3ls" "d3l")
+      _ret=`curl "${CURL_OPTS[@]}" ${DNS3L_URL}/ca | jq -r 'map(.id) | join (",")'`
+      readarray -td, _cas <<<"$_ret"
       break
     else
       _cas+=(${ca})
