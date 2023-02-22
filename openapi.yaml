@@ -7,7 +7,7 @@ info:
     with the backend, so everything the clients can do can be done with the API.
 
     The DNS3L server API.
-    You can find out more about DNS3L at [https://github.com/dta4/dns3l](https://github.com/dta4/dns3l).
+    You can find out more about DNS3L at [https://github.com/dns3l/dns3l](https://github.com/dns3l/dns3l).
 
     # Errors
 
@@ -86,12 +86,12 @@ tags:
   description: Everything about CA
   externalDocs:
     description: Find out more
-    url: https://github.com/iaean/dns3l/blob/master/dns3ld.config.hjson
+    url: https://github.com/dns3l/dns3l
 - name: crt
   description: Access to X.509 certificates
   externalDocs:
     description: Find out more
-    url: https://github.com/iaean/dns3l/blob/master/dns3ld.config.hjson
+    url: https://github.com/dns3l/dns3l
 
 paths:
   /info:
