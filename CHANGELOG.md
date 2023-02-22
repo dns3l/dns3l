@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/dns3l/dns3l/compare/v1.0.1...v1.0.2) (2023-02-22)
+
+
+### Bug Fixes
+
+* Doc, API and CLI improvements ([#18](https://github.com/dns3l/dns3l/issues/18)) ([17029e4](https://github.com/dns3l/dns3l/commit/17029e437e544deb363d0e3bed20f526172804ab))
+
 ## [1.0.1](https://github.com/dns3l/dns3l/compare/v1.0.0...v1.0.1) (2022-08-26)
 
 
