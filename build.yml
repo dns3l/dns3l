@@ -42,7 +42,6 @@ services:
       - auth
       - auth1
       - dns3ld
-      - dns3ld0x13
       # - web
 
   sra:
@@ -97,7 +96,6 @@ services:
       - dns3l
     dns_search: .
 
-  # stack external daemon
   dns3ld:
     image: dns3ld
     build:
@@ -120,23 +118,6 @@ services:
       - db
       - auth
       - auth1
-
-  # Workaround: stack internal daemon
-  #   https://github.com/dns3l/dns3l-core/issues/19
-  # dns3ld0x13:
-  #   image: dns3ld
-  #   container_name: dns3l-dns3ld0x13
-  #   restart: always
-  #   volumes:
-  #     - .env/dns3ld0x13.conf:/etc/dns3ld.conf.yml:ro
-  #   env_file:
-  #     .env/dns3ld0x13
-  #   networks:
-  #     - dns3l
-  #   dns_search: .
-  #   depends_on:
-  #     - db
-  #     - auth
 
 volumes:
   dns3l-db:

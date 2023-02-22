@@ -30,7 +30,7 @@ docker compose -f stack.yml up
 
 Stack uses per default `.env/..` for configuration.
 
-See https://github.com/iaean/dns3lingress#multihomed about considerations for multi homed setups.
+See https://github.com/dns3l/ingress#multihomed about considerations for multi homed setups.
 
 ### Build via docker
 

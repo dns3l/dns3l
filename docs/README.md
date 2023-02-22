@@ -34,12 +34,18 @@ DNS3L provides and utilizes a pluggable DNS library to handle the manifold DNS b
 
 * [Open Telekom Cloud (OTC)][10]
 * [Infoblox][13]
-* [PowerDNS][12]
 
 [10]: https://docs.otc.t-systems.com/dns/
 [11]: https://desec.io/
 [12]: https://doc.powerdns.com/authoritative/
 [13]: https://www.infoblox.com/products/ddi/
+
+## Towards DNS-01
+
+The `dns3ld` guys using [LEGO][30] as ACME client lib. Some air gap scenarios doesn't provide outbound public DNS access required by LEGOs preflight checking.
+TODO: Talk a bit about the solution we implemented...
+
+[30]: https://github.com/go-acme/lego
 
 ## Towards Auth
 
@@ -84,7 +90,7 @@ echo ${ID_TOKEN}
   "name": "Kilgore Trout" }
 ```
 
-The main authorization logic is based on DNS root suffixes by convention. This means the user can read or manipulate everything under `.foo.example.com` and `.bar.example.net`. Fine grained control between r/w per root zone per user is actually not supported. 
+The main authorization logic is based on DNS root suffixes by convention. This means the user can read or manipulate everything under `.foo.example.com` and `.bar.example.net`. For example deleting `a.b.foo.example.com` or creating `x.y.bar.example.net`. Fine grained control between r/w per root zone per user is actually not supported. 
 
 **You need to model the mapping between allowed root zones per user as groups inside your Active Directory/LDAP DIT**. Nested groups on Active Directory/LDAP level are actually not supported by Dex. A compatible model can look like this:
 
