@@ -33,8 +33,10 @@ services:
     ports:
       - 443:443
     depends_on:
-      - auth
-      # - web
+      auth:
+        condition: service_healthy
+      # web:
+      #   condition: service_started
 
   sra:
     image: ghcr.io/dns3l/sra
@@ -66,6 +68,13 @@ services:
     networks:
       - dns3l
     dns_search: .
+    healthcheck:
+      disable: false
+      test: "curl -fsk -o /dev/null https://localhost:5554/auth/.well-known/openid-configuration"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   # stack external auth1..n
   auth1:
@@ -79,6 +88,13 @@ services:
     networks:
       - dns3l
     dns_search: .
+    healthcheck:
+      disable: false
+      test: "curl -fsk -o /dev/null https://localhost:5554/auth/.well-known/openid-configuration"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   # stack external daemon
   dns3ld:
@@ -97,9 +113,19 @@ services:
       - dns3l
     dns_search: .
     depends_on:
-      - db
-      - ingress
-      - auth
+      db:
+        condition: service_started
+      ingress:
+        condition: service_started
+      auth:
+        condition: service_healthy
+    healthcheck:
+      disable: false
+      test: "curl -fs -o /dev/null http://localhost:8880/api/info"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
 volumes:
   dns3l-db:
