@@ -8,7 +8,7 @@ services:
   db:
     image: mariadb
     container_name: dns3l-mariadb
-    restart: always
+    restart: unless-stopped
     # environment:
     #   MARIADB_ROOT_PASSWORD: secret
     env_file:
@@ -22,7 +22,7 @@ services:
   ingress:
     image: ghcr.io/dns3l/ingress
     container_name: dns3l-ingress
-    restart: always
+    restart: unless-stopped
     # volumes:
     #   - .env/nginx.conf:/etc/nginx.conf:ro
     env_file:
@@ -39,7 +39,7 @@ services:
   sra:
     image: ghcr.io/dns3l/sra
     container_name: dns3l-sra
-    restart: always
+    restart: unless-stopped
     # volumes:
     #   - .env/stepca.conf:/etc/stepca.conf.json:ro
     # environment:
@@ -58,7 +58,7 @@ services:
   auth:
     image: ghcr.io/dns3l/auth
     container_name: dns3l-auth
-    restart: always
+    restart: unless-stopped
     # volumes:
     #   - .env/dex.conf:/etc/dex.conf.yml:ro
     env_file:
@@ -71,7 +71,7 @@ services:
   auth1:
     image: ghcr.io/dns3l/auth
     container_name: dns3l-auth1
-    restart: always
+    restart: unless-stopped
     # volumes:
     #   - .env/dex1.conf:/etc/dex.conf.yml:ro
     env_file:
@@ -84,7 +84,7 @@ services:
   dns3ld:
     image: ghcr.io/dns3l/dns3ld
     container_name: dns3l-dns3ld
-    restart: always
+    restart: unless-stopped
     volumes:
       - .env/dns3ld.conf:/etc/dns3ld.conf.yml:ro
     # environment:
