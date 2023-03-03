@@ -11,14 +11,14 @@ _dns3l_completion_sh ()
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  all_long_opts="--config --ca --dns --wildcard --windows --skiptls --help --version --verbose "
-  all_short_opts="-f -c -a -w -m -s -h -v -d "
+  all_long_opts="--config --ca --dns --wildcard --windows --skiptls --anonymous --help --version --verbose "
+  all_short_opts="-f -c -i -w -m -s -a -h -v -d "
   case "$prev" in
     --ca|-c)
       COMPREPLY=( $(compgen -W "les le d3ls d3l any" -- "${cur}") )
       return 0
       ;;
-    --config|-f|--dns|-a)
+    --config|-f|--dns|-i)
       COMPREPLY=( $(compgen -o bashdefault -o default -- "${cur}") )
       return 0
       ;;

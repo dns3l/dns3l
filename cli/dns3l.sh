@@ -6,7 +6,7 @@ export BASE
 export SCRIPT=$(basename ${0})
 export NAME=$(basename -s .sh ${0})
 export LOG=${BASE}/${NAME}.log
-export VERSION=0.7.0
+export VERSION=0.8.1
 
 # DEFINE_SCRIPT_DIR_GNU([BASE])
 # INCLUDE_PARSING_CODE([dns3l-cli.sh])
@@ -56,7 +56,7 @@ CLIENT_ID=${CLIENT_ID:-"dns3l-api"}
 CLIENT_SECRET=${CLIENT_SECRET:-"secret"}
 
 AUTH_USER=${DNS3L_USER:-""}
-if [ -z "${AUTH_USER}" ]; then
+if [ -z "${AUTH_USER}" -a -z "${_arg_anonymous#off}" ]; then
   set +u
   if [ -n "${USERNAME}" ]; then
     AUTH_USER=${USERNAME,,}
@@ -71,60 +71,92 @@ if [ -z "${AUTH_USER}" ]; then
   set -u
 fi
 AUTH_PASS=${DNS3L_PASS:-""}
-if [ -z "${AUTH_PASS}" ]; then
+if [ -z "${AUTH_PASS}" -a -z "${_arg_anonymous#off}" ]; then
   read -sp "Password for ${AUTH_USER}: " AUTH_PASS
   echo >&2
 fi
+
 if [ -z "${_arg_skiptls#off}" ]; then
   CURL_OPTS=( -s )
 else
   CURL_OPTS=( -s -k )
 fi
 
-TOKEN_URL=`curl "${CURL_OPTS[@]}" "${AUTH_URL}/.well-known/openid-configuration" | jq -r .token_endpoint || true`
-if [[ -z ${TOKEN_URL} ]]; then
-  echo "Oooops. No token URL from ${AUTH_URL}/.well-known/openid-configuration." >&2
-  exit 5
+if [ -z "${_arg_anonymous#off}" ]; then
+  TOKEN_URL=`curl "${CURL_OPTS[@]}" "${AUTH_URL}/.well-known/openid-configuration" | jq -r .token_endpoint || true`
+  if [[ -z ${TOKEN_URL} ]]; then
+    echo "Oooops. No token URL from ${AUTH_URL}/.well-known/openid-configuration." >&2
+    exit 5
+  fi
+  echo "Feeding ID token for ${AUTH_USER} from ${TOKEN_URL}..." >&2
+  ID_TOKEN=`curl "${CURL_OPTS[@]}" -X POST -u "${CLIENT_ID}:${CLIENT_SECRET}" \
+    -d "grant_type=password&scope=openid profile email groups offline_access&username=${AUTH_USER}&password=${AUTH_PASS}" \
+    ${TOKEN_URL} | jq -r .id_token`
+  if [[ -z ${ID_TOKEN} || ${ID_TOKEN} == "null" ]]; then
+    echo "Oooops. Invalid token." >&2
+    exit 5
+  fi
+  echo "ID token for ${AUTH_USER}: ${ID_TOKEN}" >&2
+  echo ${ID_TOKEN} | jq -R 'split(".") | .[0] | @base64d | fromjson' >&2 # header
+  echo ${ID_TOKEN} | jq -R 'split(".") | .[1] | @base64d | fromjson' >&2 # payload
+
+  AUTH_HEADER=( -H "Authorization: Bearer ${ID_TOKEN}" )
+else
+  AUTH_HEADER=( )
 fi
-echo "Feeding ID token for ${AUTH_USER} from ${TOKEN_URL}..." >&2
-ID_TOKEN=`curl "${CURL_OPTS[@]}" -X POST -u "${CLIENT_ID}:${CLIENT_SECRET}" \
-  -d "grant_type=password&scope=openid profile email groups offline_access&username=${AUTH_USER}&password=${AUTH_PASS}" \
-  ${TOKEN_URL} | jq -r .id_token`
-if [[ -z ${ID_TOKEN} || ${ID_TOKEN} == "null" ]]; then
-  echo "Oooops. Invalid token." >&2
-  exit 5
-fi
-echo "ID token for ${AUTH_USER}: ${ID_TOKEN}" >&2
-echo ${ID_TOKEN} | jq -R 'split(".") | .[0] | @base64d | fromjson' >&2 # header
-echo ${ID_TOKEN} | jq -R 'split(".") | .[1] | @base64d | fromjson' >&2 # payload
 
 echo "Ping API..." >&2
-curl "${CURL_OPTS[@]}" ${DNS3L_URL}/info | jq --indent 1 . >&2
+curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/info | jq --indent 1 . >&2
 echo "Configured CA..." >&2
-curl "${CURL_OPTS[@]}" ${DNS3L_URL}/ca | jq --indent 1 . >&2
+curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca | jq --indent 1 . >&2
 
 function list()
 {
   echo "Certs issued by ${1}..." >&2
-  curl "${CURL_OPTS[@]}" -H "Authorization: Bearer ${ID_TOKEN}" ${DNS3L_URL}/ca/${1}/crt | jq --indent 1 .
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt | jq --indent 1 .
 }
 
 function delete()
 {
   echo "Delete ${2}:${1}..." >&2
-  curl "${CURL_OPTS[@]}" -X DELETE -H "Authorization: Bearer ${ID_TOKEN}" ${DNS3L_URL}/ca/${1}/crt/${2} | jq --indent 1 .
+  curl "${CURL_OPTS[@]}" -X DELETE "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2} | jq --indent 1 .
+}
+
+function get()
+{
+  echo "${2}:${1} details..." >&2
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2} | jq --indent 1 .
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem | jq --indent 1 .
 }
 
 function key()
 {
   echo "PEM key for ${2}:${1}..." >&2
-  curl "${CURL_OPTS[@]}" -H "Authorization: Bearer ${ID_TOKEN}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/key | sed -e '/^[[:space:]]*$/d'
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/key | sed -e '/^[[:space:]]*$/d'
+}
+
+function crt()
+{
+  echo "PEM for ${2}:${1}..." >&2
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/crt | sed -e '/^[[:space:]]*$/d'
+}
+
+function chain()
+{
+  echo "PEM chain for ${2}:${1}..." >&2
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/chain | sed -e '/^[[:space:]]*$/d'
+}
+
+function root()
+{
+  echo "PEM root for ${2}:${1}..." >&2
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/root | sed -e '/^[[:space:]]*$/d'
 }
 
 function fullchain()
 {
   echo "PEM fullchain for ${2}:${1}..." >&2
-  curl "${CURL_OPTS[@]}" -H "Authorization: Bearer ${ID_TOKEN}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/fullchain | sed -e '/^[[:space:]]*$/d'
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/fullchain | sed -e '/^[[:space:]]*$/d'
 }
 
 function claim()
@@ -152,9 +184,8 @@ EOT
 cat <<EOT
 { "name":"${2}", "wildcard":$wc, "san":[$(join , ${_arg_san[@]})] }
 EOT
-  fi | curl "${CURL_OPTS[@]}" -X POST \
+  fi | curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" -X POST \
          -H 'content-type: application/json' \
-         -H "Authorization: Bearer ${ID_TOKEN}" \
          -d @- ${DNS3L_URL}/ca/${1}/crt | jq --indent 1 .
 }
 
@@ -185,11 +216,23 @@ case "${_arg_cmd}" in
   delete)
     for ca in ${_cas[@]}; do delete "$ca" "${_arg_fqdn}"; done
     ;;
+  get)
+    for ca in ${_cas[@]}; do get "$ca" "${_arg_fqdn}"; done
+    ;;
   key)
     for ca in ${_cas[@]}; do key "$ca" "${_arg_fqdn}"; done
     ;;
+  crt)
+    for ca in ${_cas[@]}; do crt "$ca" "${_arg_fqdn}"; done
+    ;;
+  chain)
+    for ca in ${_cas[@]}; do chain "$ca" "${_arg_fqdn}"; done
+    ;;
   fullchain)
     for ca in ${_cas[@]}; do fullchain "$ca" "${_arg_fqdn}"; done
+    ;;
+  root)
+    for ca in ${_cas[@]}; do root "$ca" "${_arg_fqdn}"; done
     ;;
 esac
 
