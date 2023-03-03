@@ -3,22 +3,27 @@
 SHORT_HELP="DNS3L CLI helper"
 LONG_HELP="Available commands:
  list      | List certs issued by DNS3L ACME CA(s)
+ get       | List cert details from DNS3L ACME CA(s)
  key       | Get cert key PEM from DNS3L ACME CA(s)
+ crt       | Get cert PEM from DNS3L ACME CA(s)
+ chain     | Get cert chain PEM from DNS3L ACME CA(s)
+ root      | Get cert root PEM from DNS3L ACME CA(s)
  fullchain | Get cert fullchain PEM from DNS3L ACME CA(s)
  claim     | Obtain cert from DNS3L ACME CA(s)
  delete    | Delete cert issued by DNS3L ACME CA(s)"
 
 # ARG_POSITIONAL_SINGLE([CMD],[command])
-# ARG_TYPE_GROUP_SET([cmd],[CMD],[CMD],[list,claim,delete,key,fullchain])
+# ARG_TYPE_GROUP_SET([cmd],[CMD],[CMD],[list,get,key,crt,chain,root,fullchain,claim,delete])
 # ARG_POSITIONAL_SINGLE([FQDN],[FQDN as certificate name])
 # ARG_POSITIONAL_INF([SAN],[optional list of SAN])
 # ARG_OPTIONAL_SINGLE([config],[f],[config file],[~/.${NAME}.conf])
 # ARG_OPTIONAL_REPEATED([ca],[c],[CA to use],[les])
 # ARG_TYPE_GROUP_SET([ca],[CA],[ca],[les,le,d3ls,d3l,any])
-# ARG_OPTIONAL_SINGLE([dns],[a],[AutoDNS (A)RR to create])
+# ARG_OPTIONAL_SINGLE([dns],[i],[AutoDNS (A)RR to create])
 # ARG_OPTIONAL_BOOLEAN([wildcard],[w],[create a wildcard])
 # ARG_OPTIONAL_BOOLEAN([windows],[m],[running on Windows])
 # ARG_OPTIONAL_BOOLEAN([skiptls],[s],[skip TLS validation])
+# ARG_OPTIONAL_BOOLEAN([anonymous],[a],[no auth, no bearer])
 # ARG_DEFAULTS_POS([])
 # ARG_HELP([$SHORT_HELP],[$LONG_HELP])
 # ARG_VERSION([echo $VERSION])
@@ -44,12 +49,12 @@ die()
 
 cmd()
 {
-	local _allowed=("list" "claim" "delete" "key" "fullchain") _seeking="$1"
+	local _allowed=("list" "get" "key" "crt" "chain" "root" "fullchain" "claim" "delete") _seeking="$1"
 	for element in "${_allowed[@]}"
 	do
 		test "$element" = "$_seeking" && echo "$element" && return 0
 	done
-	die "Value '$_seeking' (of argument '$2') doesn't match the list of allowed values: 'list', 'claim', 'delete', 'key' and 'fullchain'" 4
+	die "Value '$_seeking' (of argument '$2') doesn't match the list of allowed values: 'list', 'get', 'key', 'crt', 'chain', 'root', 'fullchain', 'claim' and 'delete'" 4
 }
 
 
@@ -66,7 +71,7 @@ ca()
 
 begins_with_short_option()
 {
-  local first_option all_short_options='fcawmshvd'
+  local first_option all_short_options='fciwmsahvd'
   first_option="${1:0:1}"
   test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
 }
@@ -83,24 +88,26 @@ _arg_dns=
 _arg_wildcard="off"
 _arg_windows="off"
 _arg_skiptls="off"
+_arg_anonymous="off"
 _arg_verbose=0
 
 
 print_help()
 {
   printf '%s\n' "$SHORT_HELP"
-  printf 'Usage: %s [-f|--config <arg>] [-c|--ca <CA>] [-a|--dns <arg>] [-w|--(no-)wildcard] [-m|--(no-)windows] [-s|--(no-)skiptls] [-h|--help] [-v|--version] [-d|--verbose] [--] <CMD> <FQDN> [<SAN-1>] ... [<SAN-n>] ...\n' "$0"
-  printf '\t%s\n' "<CMD>: command. Can be one of: 'list', 'claim', 'delete', 'key' and 'fullchain'"
+  printf 'Usage: %s [-f|--config <arg>] [-c|--ca <CA>] [-i|--dns <arg>] [-w|--(no-)wildcard] [-m|--(no-)windows] [-s|--(no-)skiptls] [-a|--(no-)anonymous] [-h|--help] [-v|--version] [-d|--verbose] [--] <CMD> <FQDN> [<SAN-1>] ... [<SAN-n>] ...\n' "$0"
+  printf '\t%s\n' "<CMD>: command. Can be one of: 'list', 'get', 'key', 'crt', 'chain', 'root', 'fullchain', 'claim' and 'delete'"
   printf '\t%s\n' "<FQDN>: FQDN as certificate name"
   printf '\t%s\n' "<SAN>: optional list of SAN"
   printf '\t%s\n' "-f, --config: config file (default: '~/.${NAME}.conf')"
   printf '\t%s' "-c, --ca: CA to use. Can be one of: 'les', 'le', 'd3ls', 'd3l' and 'any' (default array elements:"
   printf " '%s'" les
   printf ')\n'
-  printf '\t%s\n' "-a, --dns: AutoDNS (A)RR to create (no default)"
+  printf '\t%s\n' "-i, --dns: AutoDNS (A)RR to create (no default)"
   printf '\t%s\n' "-w, --wildcard, --no-wildcard: create a wildcard (off by default)"
   printf '\t%s\n' "-m, --windows, --no-windows: running on Windows (off by default)"
   printf '\t%s\n' "-s, --skiptls, --no-skiptls: skip TLS validation (off by default)"
+  printf '\t%s\n' "-a, --anonymous, --no-anonymous: no auth, no bearer (off by default)"
   printf '\t%s\n' "-h, --help: Prints help"
   printf '\t%s\n' "-v, --version: Prints version"
   printf '\t%s\n' "-d, --verbose: Set verbose output (can be specified multiple times to increase the effect)"
@@ -147,7 +154,7 @@ parse_commandline()
       -c*)
         _arg_ca+=("$(ca "${_key##-c}" "ca")") || exit 1
         ;;
-      -a|--dns)
+      -i|--dns)
         test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
         _arg_dns="$2"
         shift
@@ -155,8 +162,8 @@ parse_commandline()
       --dns=*)
         _arg_dns="${_key##--dns=}"
         ;;
-      -a*)
-        _arg_dns="${_key##-a}"
+      -i*)
+        _arg_dns="${_key##-i}"
         ;;
       -w|--no-wildcard|--wildcard)
         _arg_wildcard="on"
@@ -192,6 +199,18 @@ parse_commandline()
         if test -n "$_next" -a "$_next" != "$_key"
         then
           { begins_with_short_option "$_next" && shift && set -- "-s" "-${_next}" "$@"; } || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option."
+        fi
+        ;;
+      -a|--no-anonymous|--anonymous)
+        _arg_anonymous="on"
+        test "${1:0:5}" = "--no-" && _arg_anonymous="off"
+        ;;
+      -a*)
+        _arg_anonymous="on"
+        _next="${_key##-a}"
+        if test -n "$_next" -a "$_next" != "$_key"
+        then
+          { begins_with_short_option "$_next" && shift && set -- "-a" "-${_next}" "$@"; } || die "The short option '$_key' can't be decomposed to ${_key:0:2} and -${_key:2}, because ${_key:0:2} doesn't accept value and '-${_key:2:1}' doesn't correspond to a short option."
         fi
         ;;
       -h|--help)
