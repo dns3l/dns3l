@@ -54,6 +54,7 @@ DNS3L_URL=https://${DNS3L_FQDN:-"localhost"}/api # http://dns3ld:8880/api
 AUTH_URL=https://${DNS3L_FQDN:-"localhost"}/auth # https://auth:5554/auth
 CLIENT_ID=${CLIENT_ID:-"dns3l-api"}
 CLIENT_SECRET=${CLIENT_SECRET:-"secret"}
+DAEMON_CLIENT_ID=${DAEMON_CLIENT_ID:-"dns3ld"} # https://github.com/dns3l/dns3l-core/issues/59
 
 AUTH_USER=${DNS3L_USER:-""}
 if [ -z "${AUTH_USER}" -a -z "${_arg_anonymous#off}" ]; then
@@ -90,7 +91,7 @@ if [ -z "${_arg_anonymous#off}" ]; then
   fi
   echo "Feeding ID token for ${AUTH_USER} from ${TOKEN_URL}..." >&2
   ID_TOKEN=`curl "${CURL_OPTS[@]}" -X POST -u "${CLIENT_ID}:${CLIENT_SECRET}" \
-    -d "grant_type=password&scope=openid profile email groups offline_access&username=${AUTH_USER}&password=${AUTH_PASS}" \
+    -d "grant_type=password&scope=openid profile email groups offline_access audience:server:client_id:${DAEMON_CLIENT_ID}&username=${AUTH_USER}&password=${AUTH_PASS}" \
     ${TOKEN_URL} | jq -r .id_token`
   if [[ -z ${ID_TOKEN} || ${ID_TOKEN} == "null" ]]; then
     echo "Oooops. Invalid token." >&2
@@ -151,6 +152,12 @@ function root()
 {
   echo "PEM root for ${2}:${1}..." >&2
   curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/root | sed -e '/^[[:space:]]*$/d'
+}
+
+function rootchain()
+{
+  echo "PEM rootchain for ${2}:${1}..." >&2
+  curl "${CURL_OPTS[@]}" "${AUTH_HEADER[@]}" ${DNS3L_URL}/ca/${1}/crt/${2}/pem/rootchain | sed -e '/^[[:space:]]*$/d'
 }
 
 function fullchain()
@@ -230,6 +237,9 @@ case "${_arg_cmd}" in
     ;;
   fullchain)
     for ca in ${_cas[@]}; do fullchain "$ca" "${_arg_fqdn}"; done
+    ;;
+  rootchain)
+    for ca in ${_cas[@]}; do rootchain "$ca" "${_arg_fqdn}"; done
     ;;
   root)
     for ca in ${_cas[@]}; do root "$ca" "${_arg_fqdn}"; done

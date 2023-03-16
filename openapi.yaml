@@ -571,6 +571,39 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+  /ca/{caId}/crt/{crtName}/pem/rootchain:
+    get:
+      tags:
+      - crt
+      parameters:
+      - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/crtName'
+      responses:
+        default:
+          $ref: '#/components/responses/Error'
+        200:
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                readOnly: true
+                example: |
+                  -----BEGIN CERTIFICATE-----
+                  CzAJBgNVBAYTAkRFMQ8wDQYDVQQIEwZIZXNzZW4xEjAQBgNVBAcTCURhcm1zdGFk
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END CERTIFICATE-----
+                  -----BEGIN CERTIFICATE-----
+                  MIICWzCCAgKgAwIBAgIRAPdJH+BDh/90UFkQvvmIgtMwCgYIKoZIzj0EAwIwgYsx
+                  KbfuDy7HDRyz86enmPwaRhnlkRNSGJ9/UD7b/P3egg==
+                  -----END CERTIFICATE-----
+        404:
+          $ref: '#/components/responses/NotFound'
+      security:
+      - {}
+      - oauth:
+        - write:ca
+        - read:ca
   /ca/{caId}/crt/{crtName}/pem/fullchain:
     get:
       tags:
@@ -1172,14 +1205,18 @@ components:
           type: string
           description: The unencrypted private key PEM encoded
           example: "-----BEGIN RSA PRIVATE KEY-----\n..\n-----END RSA PRIVATE KEY-----\n"
-        chain:
-          type: string
-          description: All intermediate certificate(s) PEM encoded
-          example: "-----BEGIN CERTIFICATE-----\n..\n-----END CERTIFICATE-----\n"
         root:
           type: string
           description: The root certificate PEM encoded
           example: "-----BEGIN CERTIFICATE-----\n..\n-----END CERTIFICATE-----\n"
+        chain:
+          type: string
+          description: All intermediate certificate(s) PEM encoded
+          example: "-----BEGIN CERTIFICATE-----\n+..+..+\n-----END CERTIFICATE-----\n"
+        rootchain:
+          type: string
+          description: chain + root PEM encoded
+          example: "-----BEGIN CERTIFICATE-----\n+..+..+\n-----END CERTIFICATE-----\n"
         fullchain:
           type: string
           description: cert + chain + root PEM encoded
