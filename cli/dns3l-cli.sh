@@ -13,7 +13,7 @@ LONG_HELP="Available commands:
  delete    | Delete cert issued by DNS3L ACME CA(s)"
 
 # ARG_POSITIONAL_SINGLE([CMD],[command])
-# ARG_TYPE_GROUP_SET([cmd],[CMD],[CMD],[list,get,key,crt,chain,root,fullchain,claim,delete])
+# ARG_TYPE_GROUP_SET([cmd],[CMD],[CMD],[list,get,key,crt,chain,root,rootchain,fullchain,claim,delete])
 # ARG_POSITIONAL_SINGLE([FQDN],[FQDN as certificate name])
 # ARG_POSITIONAL_INF([SAN],[optional list of SAN])
 # ARG_OPTIONAL_SINGLE([config],[f],[config file],[~/.${NAME}.conf])
@@ -49,12 +49,12 @@ die()
 
 cmd()
 {
-	local _allowed=("list" "get" "key" "crt" "chain" "root" "fullchain" "claim" "delete") _seeking="$1"
+	local _allowed=("list" "get" "key" "crt" "chain" "root" "rootchain" "fullchain" "claim" "delete") _seeking="$1"
 	for element in "${_allowed[@]}"
 	do
 		test "$element" = "$_seeking" && echo "$element" && return 0
 	done
-	die "Value '$_seeking' (of argument '$2') doesn't match the list of allowed values: 'list', 'get', 'key', 'crt', 'chain', 'root', 'fullchain', 'claim' and 'delete'" 4
+	die "Value '$_seeking' (of argument '$2') doesn't match the list of allowed values: 'list', 'get', 'key', 'crt', 'chain', 'root', 'rootchain', 'fullchain', 'claim' and 'delete'" 4
 }
 
 
@@ -96,7 +96,7 @@ print_help()
 {
   printf '%s\n' "$SHORT_HELP"
   printf 'Usage: %s [-f|--config <arg>] [-c|--ca <CA>] [-i|--dns <arg>] [-w|--(no-)wildcard] [-m|--(no-)windows] [-s|--(no-)skiptls] [-a|--(no-)anonymous] [-h|--help] [-v|--version] [-d|--verbose] [--] <CMD> <FQDN> [<SAN-1>] ... [<SAN-n>] ...\n' "$0"
-  printf '\t%s\n' "<CMD>: command. Can be one of: 'list', 'get', 'key', 'crt', 'chain', 'root', 'fullchain', 'claim' and 'delete'"
+  printf '\t%s\n' "<CMD>: command. Can be one of: 'list', 'get', 'key', 'crt', 'chain', 'root', 'rootchain', 'fullchain', 'claim' and 'delete'"
   printf '\t%s\n' "<FQDN>: FQDN as certificate name"
   printf '\t%s\n' "<SAN>: optional list of SAN"
   printf '\t%s\n' "-f, --config: config file (default: '~/.${NAME}.conf')"
