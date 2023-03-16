@@ -8,7 +8,7 @@ services:
   db:
     image: mariadb
     container_name: dns3l-mariadb
-    restart: always
+    restart: unless-stopped
     # environment:
     #   MARIADB_ROOT_PASSWORD: secret
     env_file:
@@ -28,7 +28,7 @@ services:
         - https_proxy
         - no_proxy
     container_name: dns3l-ingress
-    restart: always
+    restart: unless-stopped
     # volumes:
     #   - .env/nginx.conf:/etc/nginx.conf:ro
     env_file:
@@ -39,10 +39,10 @@ services:
     ports:
       - 443:443
     depends_on:
-      - auth
-      - auth1
-      - dns3ld
-      # - web
+      auth:
+        condition: service_healthy
+      # web:
+      #   condition: service_started
 
   sra:
     image: dns3lsra
@@ -53,7 +53,7 @@ services:
         - https_proxy
         - no_proxy
     container_name: dns3l-sra
-    restart: always
+    restart: unless-stopped
     # volumes:
     #   - .env/stepca.conf:/etc/stepca.conf.json:ro
     env_file:
@@ -74,7 +74,7 @@ services:
         - https_proxy
         - no_proxy
     container_name: dns3l-auth
-    restart: always
+    restart: unless-stopped
     # volumes:
     #   - .env/dex.conf:/etc/dex.conf.yml:ro
     env_file:
@@ -82,19 +82,33 @@ services:
     networks:
       - dns3l
     dns_search: .
+    healthcheck:
+      disable: false
+      test: "curl -fsk -o /dev/null https://localhost:5554/auth/.well-known/openid-configuration"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   # stack external auth1..n
   auth1:
     image: dns3lauth
     container_name: dns3l-auth1
-    restart: always
+    restart: unless-stopped
     # volumes:
-    #   - .env/dex.conf:/etc/dex.conf.yml:ro
+    #   - .env/dex1.conf:/etc/dex.conf.yml:ro
     env_file:
       .env/auth1
     networks:
       - dns3l
     dns_search: .
+    healthcheck:
+      disable: false
+      test: "curl -fsk -o /dev/null https://localhost:5554/auth/.well-known/openid-configuration"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   dns3ld:
     image: dns3ld
@@ -106,18 +120,32 @@ services:
         - https_proxy
         - no_proxy
     container_name: dns3l-dns3ld
-    restart: always
+    restart: unless-stopped
     volumes:
       - .env/dns3ld.conf:/etc/dns3ld.conf.yml:ro
+    # environment:
+    #   HTTP_PROXY:
+    #   HTTPS_PROXY:
+    #   NO_PROXY:
     env_file:
       .env/dns3ld
     networks:
       - dns3l
     dns_search: .
     depends_on:
-      - db
-      - auth
-      - auth1
+      db:
+        condition: service_started
+      ingress:
+        condition: service_started
+      auth:
+        condition: service_healthy
+    healthcheck:
+      disable: false
+      test: "curl -fs -o /dev/null http://localhost:8880/api/info"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   dns3l-db:
