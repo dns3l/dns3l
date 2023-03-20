@@ -35,8 +35,27 @@ services:
     depends_on:
       auth:
         condition: service_healthy
-      # web:
-      #   condition: service_started
+      web:
+        condition: service_started
+
+  web:
+    image: ghcr.io/dns3l/web
+    container_name: dns3l-web
+    restart: unless-stopped
+    # volumes:
+    #   - .env/nuxt.config.js:/etc/nuxt.config.js:ro
+    env_file:
+      .env/web
+    networks:
+      - dns3l
+    dns_search: .
+    healthcheck:
+      disable: false
+      test: "curl -fsk -o /dev/null http://localhost:3000"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   sra:
     image: ghcr.io/dns3l/sra
