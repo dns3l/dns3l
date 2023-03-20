@@ -41,8 +41,33 @@ services:
     depends_on:
       auth:
         condition: service_healthy
-      # web:
-      #   condition: service_started
+      web:
+        condition: service_started
+
+  web:
+    image: dns3lweb
+    build:
+      context: ../dns3lweb
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    container_name: dns3l-web
+    restart: unless-stopped
+    # volumes:
+    #   - .env/nuxt.config.js:/etc/nuxt.config.js:ro
+    env_file:
+      .env/web
+    networks:
+      - dns3l
+    dns_search: .
+    healthcheck:
+      disable: false
+      test: "curl -fsk -o /dev/null http://localhost:3000"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   sra:
     image: dns3lsra
