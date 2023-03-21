@@ -169,14 +169,11 @@ function fullchain()
 function claim()
 {
   function join () {
-    set +u
-    local a=("${@:3}")
-    if [ -z $2 ]; then
-      printf "%s" "$2${a[@]/#/\"$1\"}";
-    else
-      printf "\"%s\"" "$2${a[@]/#/\"$1\"}";
+    local d=${1-} f=${2-}
+    if shift 2; then
+      printf "%s" "\"$f" "${@/#/\"$d\"}"
+      printf "\""
     fi
-    set -u
   }
   if [ -z "${_arg_wildcard#off}" ]; then
     wc=false
