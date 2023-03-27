@@ -1,7 +1,7 @@
 #### Your certificates issued by [Let's Encrypt][0].
 Claim another one via:
 ```bash
-CA_ID=Your Let's Encrypt CA provider ID
+CA_ID=Your Lets Encrypt CA provider ID
 CERT_NAME=foo.example.com # FQDN as cert name
 
 dns3l.sh --ca ${CA_ID} claim ${CERT_NAME}
