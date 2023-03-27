@@ -8,6 +8,7 @@ LONG_HELP="Available commands:
  crt       | Get cert PEM from DNS3L ACME CA(s)
  chain     | Get cert chain PEM from DNS3L ACME CA(s)
  root      | Get cert root PEM from DNS3L ACME CA(s)
+ rootchain | Get cert rootchain PEM from DNS3L ACME CA(s)
  fullchain | Get cert fullchain PEM from DNS3L ACME CA(s)
  claim     | Obtain cert from DNS3L ACME CA(s)
  delete    | Delete cert issued by DNS3L ACME CA(s)"
