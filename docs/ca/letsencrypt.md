@@ -1,20 +1,25 @@
 #### Your certificates issued by [Let's Encrypt][0].
 Claim another one via:
 ```bash
-dns3l claim foo.example.com --ca letsencrypt
+CA_ID=Your Let's Encrypt CA provider ID
+CERT_NAME=foo.example.com # FQDN as cert name
+
+dns3l.sh --ca ${CA_ID} claim ${CERT_NAME}
+
 ```
-Use [Let's Encrypt Staging](letsencrypt-staging.md) during developing automation.
+Use [Let's Encrypt Staging][1] during developing automation.
 
 [0]: https://letsencrypt.org/
+[1]: https://letsencrypt.org/docs/staging-environment/
 
-Pick the right data for your TLS endpoint `foo.example.com`. Find further (sometimes misleading) details [here][1].
+Pick the right data for your TLS endpoint `foo.example.com`.
 
-* `cert.pem`: your leaf entity cert `foo.example.com`
-* `privkey.pem`: unencrypted private key for your leaf entity cert
-* `chain.pem`: intermediate cert(s) and root cert for your leaf entity cert
-* `fullchain.pem`: `cert.pem` + `chain.pem`
+* `dns3l.sh --ca ${CA_ID} key ${CERT_NAME}`: unencrypted private key for your leaf entity cert
+* `dns3l.sh [--anonymous] --ca ${CA_ID} crt ${CERT_NAME}`: your leaf entity cert
+* `dns3l.sh [--anonymous] --ca ${CA_ID} rootchain ${CERT_NAME}`: intermediate cert(s) and root cert for your leaf entity cert
+* `dns3l.sh [--anonymous] --ca ${CA_ID} fullchain ${CERT_NAME}`: `crt` + `rootchain`
 
-[1]: https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates
+[2]: https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates
 
 Check that your TLS endpoint `foo.example.com` is configured properly:
 ```bash
