@@ -377,6 +377,15 @@ paths:
       tags:
       - crt
       summary: Get dedicated certificate and chain
+      description: |
+        Independently from CA server MUST provide full chain for leaf certificate to enable users to validate. The server MUST accept all issuer certs available via ACME. If issuer certificates like `root` e.g. are not available via ACME, server MUST use available Authority Information Access (AIA) as defined in [RFC-5280](https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.2.1) #4.2.2.1.
+        ```
+        X509v3 extensions:
+          Authority Information Access:
+            CA Issuers - URI:http://r3.i.lencr.org/
+        ```
+        If AIA is not provided, server MAY use CA specific configurable download links as fallback. DER encoding MUST be supported. Other encodings MAY be supported. ACME has highest precedence. Config has lowest precedence. Considered as `root` is the issuer cert with `CA:TRUE` and empty AIA, retrieved via ACME, AIA or config.
+        If full chain cannot be retrieved, server MUST fail on `claim`. On `claim` server MAY validate full chain, if chain was obtained via ACME or AIA and SHOULD validate full chain in any other case. If validation fails, server MUST fail.
       x-badges:
         - color: red
           label: 'mandatory'
