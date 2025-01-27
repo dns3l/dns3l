@@ -1068,7 +1068,8 @@ components:
               example: 128
             ttl:
               type: string
-              description: TTL proposal
+              description: |
+                Certificate TTL proposal. Format specified by [Go time package](https://pkg.go.dev/time#ParseDuration).
               example: 30d
             subject:
               type: string
