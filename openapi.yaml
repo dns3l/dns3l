@@ -67,7 +67,7 @@ info:
 
     Token-based auth allows setting a secret token in the request header
     "X-DNS3L-Access-Token" to access the API instead of doing OIDC auth.
-    If a token is not given or invalid, dns3ld falls back to OIDC auth.
+    If a token is not given or invalid, we fall back to OIDC auth.
     Token-based auth takes precedence over OIDC auth if both are given.
 
   contact:
