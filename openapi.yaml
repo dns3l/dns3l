@@ -67,12 +67,8 @@ info:
 
     Token-based auth allows setting a secret token in the request header
     "X-DNS3L-Access-Token" to access the API instead of doing OIDC auth.
-    Currently there is no API token self-service implemented but tokens
-    can be used by statically configuring them in the config.
-    Using tokens, while there is no self service, is not recommended for
-    all-day usage, only for administrative tasks like bootstrapping the
-    dns3l stack (where it is required) or low-churn M2M auth.
     If a token is not given or invalid, dns3ld falls back to OIDC auth.
+    Token-based auth takes precedence over OIDC auth if both are given.
 
   contact:
     url: https://github.com/dns3l/dns3l/discussions
