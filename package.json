@@ -1,6 +1,6 @@
 {
   "name": "dns3l",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "scripts": {
     "semantic-pre-release": "npx semantic-release -e ./pre-release.js --debug",
     "semantic-release": "npx semantic-release -e ./release.js --debug"

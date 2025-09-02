@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/dns3l/dns3l/compare/v1.0.3...v1.1.0) (2025-09-02)
+
+
+### Features
+
+* openapi: access tokens, compose: dropped unused internal auth service ([#32](https://github.com/dns3l/dns3l/issues/32)) ([168b475](https://github.com/dns3l/dns3l/commit/168b4756d5281e6f12f4e671d857fa82c621e947))
+
 ## [1.0.3](https://github.com/dns3l/dns3l/compare/v1.0.2...v1.0.3) (2023-03-16)
 
 
