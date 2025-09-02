@@ -33,9 +33,9 @@ services:
     ports:
       - 443:443
     depends_on:
-      auth:
-        condition: service_healthy
       web:
+        condition: service_started
+      dns3ld:
         condition: service_started
 
   web:
@@ -75,26 +75,6 @@ services:
     depends_on:
       - db
 
-  # stack internal auth
-  auth:
-    image: ghcr.io/dns3l/auth
-    container_name: dns3l-auth
-    restart: unless-stopped
-    # volumes:
-    #   - .env/dex.conf:/etc/dex.conf.yml:ro
-    env_file:
-      .env/auth
-    networks:
-      - dns3l
-    dns_search: .
-    healthcheck:
-      disable: false
-      test: "curl -fsk -o /dev/null https://localhost:5554/auth/.well-known/openid-configuration"
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-
   # stack external auth1..n
   auth1:
     image: ghcr.io/dns3l/auth
@@ -133,10 +113,6 @@ services:
     depends_on:
       db:
         condition: service_started
-      ingress:
-        condition: service_started
-      auth:
-        condition: service_healthy
     healthcheck:
       disable: false
       test: "curl -fs -o /dev/null http://localhost:8880/api/info"

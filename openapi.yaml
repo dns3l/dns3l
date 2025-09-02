@@ -63,12 +63,19 @@ info:
     The server MUST implement AuthZ for any path that publishes key material. All potentially existing SAN MUST pass {domain suffix} based AuthZ check.
     The server MAY implement optional AuthZ for any other read only (GET) path.
 
+    ## Token-based auth
+
+    Token-based auth allows setting a secret token in the request header
+    "X-DNS3L-Access-Token" to access the API instead of doing OIDC auth.
+    If a token is not given or invalid, we fall back to OIDC auth.
+    Token-based auth takes precedence over OIDC auth if both are given.
+
   contact:
     url: https://github.com/dns3l/dns3l/discussions
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.3
+  version: 1.1.0
 
 externalDocs:
   description: Find out more about DNS3L
@@ -115,6 +122,7 @@ paths:
       - oauth:
         - write:dns
         - read:dns
+      - accesstoken: []
 
   /dns:
     get:
@@ -138,6 +146,7 @@ paths:
       - oauth:
         - write:dns
         - read:dns
+      - accesstoken: []
   /dns/rtzn:
     get:
       tags:
@@ -160,6 +169,7 @@ paths:
       - oauth:
         - write:dns
         - read:dns
+      - accesstoken: []
 
   /ca:
     get:
@@ -188,6 +198,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
   /ca/{caId}:
     get:
       tags:
@@ -217,6 +228,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
   /ca/{caId}/crt:
     get:
       tags:
@@ -249,6 +261,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
     post:
       tags:
       - crt
@@ -283,6 +296,7 @@ paths:
       security:
       - oauth:
         - write:ca
+      - accesstoken: []
   /ca/{caId}/csr:
     post:
       tags:
@@ -310,6 +324,7 @@ paths:
       security:
       - oauth:
         - write:ca
+      - accesstoken: []
   /ca/{caId}/crt/{crtName}:
     get:
       tags:
@@ -338,6 +353,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
     delete:
       tags:
       - crt
@@ -371,6 +387,7 @@ paths:
       security:
       - oauth:
         - write:ca
+      - accesstoken: []
 
   /ca/{caId}/crt/{crtName}/pem:
     get:
@@ -408,6 +425,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
     post:
       tags:
       - crt
@@ -435,6 +453,7 @@ paths:
       security:
       - oauth:
         - write:ca
+      - accesstoken: []
     put:
       tags:
       - crt
@@ -462,6 +481,7 @@ paths:
       security:
       - oauth:
         - write:ca
+      - accesstoken: []
 
   /ca/{caId}/crt/{crtName}/pem/crt:
     get:
@@ -493,6 +513,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
   /ca/{caId}/crt/{crtName}/pem/key:
     get:
       tags:
@@ -522,6 +543,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
   /ca/{caId}/crt/{crtName}/pem/chain:
     get:
       tags:
@@ -551,6 +573,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
   /ca/{caId}/crt/{crtName}/pem/root:
     get:
       tags:
@@ -580,6 +603,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
   /ca/{caId}/crt/{crtName}/pem/rootchain:
     get:
       tags:
@@ -613,6 +637,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
   /ca/{caId}/crt/{crtName}/pem/fullchain:
     get:
       tags:
@@ -651,6 +676,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
 
   /crt:
     get:
@@ -708,6 +734,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
+      - accesstoken: []
     delete:
       tags:
       - crt
@@ -725,6 +752,7 @@ paths:
       security:
       - oauth:
         - write:ca
+      - accesstoken: []
 
 components:
   responses:
@@ -1249,3 +1277,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    accesstoken:
+      type: apiKey
+      in: header
+      name: X-DNS3L-Access-Token
