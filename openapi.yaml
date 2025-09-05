@@ -94,7 +94,6 @@ externalDocs:
 
 servers:
 - url: https://dns3l.example.com/api/v1
-- url: http://localhost:8080
 
 tags:
 - name: info
