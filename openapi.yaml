@@ -57,18 +57,29 @@ info:
     ```
 
     This gives the end user read and write access to specified root zone suffixes.
-    For example `a.b.foo.example.net` and `x.y.foo.example.net`. Splitting r/w access to different root zones is actually not supported.
+    For example `a.b.foo.example.net` and `x.y.foo.example.net`.
+    Splitting r/w access to different root zones is actually not supported.
   
     Authorization is enforced server side.
-    The server MUST implement AuthZ for any path that publishes key material. All potentially existing SAN MUST pass {domain suffix} based AuthZ check.
+    The server MUST implement AuthZ for any path that publishes key material.
+    All potentially existing SAN MUST pass {domain suffix} based AuthZ check.
     The server MAY implement optional AuthZ for any other read only (GET) path.
 
-    ## Token-based auth
+    ## API key auth
 
-    Token-based auth allows setting a secret token in the request header
-    "X-DNS3L-Access-Token" to access the API instead of doing OIDC auth.
-    If a token is not given or invalid, we fall back to OIDC auth.
-    Token-based auth takes precedence over OIDC auth if both are given.
+    API key auth allows setting an API key token in the request header `X-DNS3L-API-Key`
+    to access the API. API key auth takes precedence over OIDC when API key token
+    and OIDC ID token are provided in the request. As long there is no `/token` API specified
+    for managing API key token, those are handled as shared secrets.
+
+    # Monitoring
+
+    DNS3L needs to utilize a lot of "foreign" infrastructure. By the polling design
+    its not easy for a client to detect issues with the renewal process of its certificates.
+    Just comparing the lifetime of its local certificates with the lifetime of the certificates
+    available via DNS3L seems not sufficient. `/ca/{caId}/crt/{crtName}`, `/info`
+    is providing additional hints, so a client can streamline alarming to its monitoring systems.
+    Additionally `/ca/{caId}/crt/{crtName}` contains simple hints for stale certificate detection.
 
   contact:
     url: https://github.com/dns3l/dns3l/discussions
@@ -86,7 +97,7 @@ servers:
 
 tags:
 - name: info
-  description: About versions and contacts
+  description: About versions, contacts and other stuff
 - name: dns
   description: Something about DNS
 - name: ca
@@ -114,15 +125,13 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/INFO'
+                $ref: '#/components/schemas/INFO'
       security:
       - {}
       - oauth:
         - write:dns
         - read:dns
-      - accesstoken: []
+      - apikey: []
 
   /dns:
     get:
@@ -146,7 +155,7 @@ paths:
       - oauth:
         - write:dns
         - read:dns
-      - accesstoken: []
+      - apikey: []
   /dns/rtzn:
     get:
       tags:
@@ -169,7 +178,7 @@ paths:
       - oauth:
         - write:dns
         - read:dns
-      - accesstoken: []
+      - apikey: []
 
   /ca:
     get:
@@ -198,7 +207,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}:
     get:
       tags:
@@ -228,7 +237,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}/crt:
     get:
       tags:
@@ -261,7 +270,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
     post:
       tags:
       - crt
@@ -296,7 +305,7 @@ paths:
       security:
       - oauth:
         - write:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}/csr:
     post:
       tags:
@@ -324,7 +333,7 @@ paths:
       security:
       - oauth:
         - write:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}/crt/{crtName}:
     get:
       tags:
@@ -353,7 +362,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
     delete:
       tags:
       - crt
@@ -387,7 +396,7 @@ paths:
       security:
       - oauth:
         - write:ca
-      - accesstoken: []
+      - apikey: []
 
   /ca/{caId}/crt/{crtName}/pem:
     get:
@@ -425,7 +434,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
     post:
       tags:
       - crt
@@ -453,7 +462,7 @@ paths:
       security:
       - oauth:
         - write:ca
-      - accesstoken: []
+      - apikey: []
     put:
       tags:
       - crt
@@ -481,7 +490,7 @@ paths:
       security:
       - oauth:
         - write:ca
-      - accesstoken: []
+      - apikey: []
 
   /ca/{caId}/crt/{crtName}/pem/crt:
     get:
@@ -513,7 +522,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}/crt/{crtName}/pem/key:
     get:
       tags:
@@ -543,7 +552,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}/crt/{crtName}/pem/chain:
     get:
       tags:
@@ -573,7 +582,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}/crt/{crtName}/pem/root:
     get:
       tags:
@@ -603,7 +612,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}/crt/{crtName}/pem/rootchain:
     get:
       tags:
@@ -637,7 +646,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
   /ca/{caId}/crt/{crtName}/pem/fullchain:
     get:
       tags:
@@ -676,7 +685,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
 
   /crt:
     get:
@@ -734,7 +743,7 @@ paths:
       - oauth:
         - write:ca
         - read:ca
-      - accesstoken: []
+      - apikey: []
     delete:
       tags:
       - crt
@@ -752,7 +761,7 @@ paths:
       security:
       - oauth:
         - write:ca
-      - accesstoken: []
+      - apikey: []
 
 components:
   responses:
@@ -849,7 +858,7 @@ components:
     INFO:
       type: object
       required: [ version ]
-      description: Versions and contacts
+      description: Versions, contacts and other stuff
       properties:
         version:
           type: object
@@ -866,6 +875,40 @@ components:
               readOnly: true
               description: API version
               example: 0.47.11
+        auth:
+          type: object
+          readOnly: true
+          description: Information about potential group/domain name prefixes and delimiters in OIDC token payload
+          properties:
+            groups-prefix:
+              type: string
+              readOnly: true
+              description: Group/domain name prefix
+              example: DNS3L_
+            groups-domain-delim:
+              type: string
+              readOnly: true
+              description: Group/domain name delimiter
+              example: _
+        renewal:
+          type: object
+          readOnly: true
+          properties:
+            lastRun:
+              type: string
+              format: date-time
+              readOnly: true
+              description: Time the last renewal campaign finished. A running campaign MUST NOT considered here.
+            successful:
+              type: integer
+              readOnly: true
+              description: Number of renewed certs during last campaign.
+              example: 1024
+            failed:
+              type: integer
+              readOnly: true
+              description: Number of certs where renewal failed during last campaign.
+              example: 0
         contact:
           type: object
           readOnly: true
@@ -1182,10 +1225,27 @@ components:
         valid:
           type: boolean
           readOnly: true
+        nextRenewal:
+          type: string
+          description: Time next renewal campaign scheduled for cert.
+          format: date-time
+          readOnly: true
         renewCount:
           type: integer
           format: int64
-          example: 5
+          description: Counter of successfully finished renewal campaigns.
+          example: 64
+          readOnly: true
+        lastAccess:
+          type: string
+          format: date-time
+          description: Last time certificate or key was accessed. Read access MUST be considered. Certificate as part of a chain MUST be considered.
+          readOnly: true
+        accessCount:
+          type: integer
+          format: int64
+          description: Access counter of certificate or key. Read access MUST be counted. Certificate as part of a chain MUST be counted.
+          example: 42
         wildcard:
           type: boolean
           readOnly: true
@@ -1220,8 +1280,14 @@ components:
           $ref: '#/components/schemas/CRT/properties/validTo'
         valid:
           $ref: '#/components/schemas/CRT/properties/valid'
+        nextRenewal:
+          $ref: '#/components/schemas/CRT/properties/nextRenewal'
         renewCount:
           $ref: '#/components/schemas/CRT/properties/renewCount'
+        lastAccess:
+          $ref: '#/components/schemas/CRT/properties/lastAccess'
+        accessCount:
+          $ref: '#/components/schemas/CRT/properties/accessCount'
         wildcard:
           $ref: '#/components/schemas/CRT/properties/wildcard'
         subjectCN:
@@ -1277,7 +1343,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    accesstoken:
+    apikey:
       type: apiKey
       in: header
-      name: X-DNS3L-Access-Token
+      name: X-DNS3L-API-Key
