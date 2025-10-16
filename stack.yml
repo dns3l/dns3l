@@ -1,8 +1,5 @@
 # docker stack deploy -c stack.yml dns3l
 # or: docker-compose -f stack.yml up [--build]
-# visit: http[s]://swarm-ip, http[s]://localhost, or http[s]://host-ip
-
-version: '3.1'
 
 services:
   db:
@@ -18,11 +15,24 @@ services:
     networks:
       - dns3l
     dns_search: .
+    healthcheck:
+      disable: false
+      test: [ "CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$${MARIADB_ROOT_PASSWORD} || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   ingress:
     image: ghcr.io/dns3l/ingress
     container_name: dns3l-ingress
     restart: unless-stopped
+    build:
+      context: ../ingress
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     # volumes:
     #   - .env/nginx.conf:/etc/nginx.conf:ro
     env_file:
@@ -34,14 +44,20 @@ services:
       - 443:443
     depends_on:
       web:
-        condition: service_started
+        condition: service_healthy
       dns3ld:
-        condition: service_started
+        condition: service_healthy
 
   web:
     image: ghcr.io/dns3l/web
     container_name: dns3l-web
     restart: unless-stopped
+    build:
+      context: ../web
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     # volumes:
     #   - .env/nuxt.config.js:/etc/nuxt.config.js:ro
     env_file:
@@ -51,35 +67,23 @@ services:
     dns_search: .
     healthcheck:
       disable: false
-      test: "curl -fsk -o /dev/null http://localhost:3000"
+      test: [ "CMD-SHELL", "curl -fsk -o /dev/null http://localhost:3000 || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 15s
-
-  sra:
-    image: ghcr.io/dns3l/sra
-    container_name: dns3l-sra
-    restart: unless-stopped
-    # volumes:
-    #   - .env/stepca.conf:/etc/stepca.conf.json:ro
-    # environment:
-    #   HTTP_PROXY:
-    #   HTTPS_PROXY:
-    #   NO_PROXY:
-    env_file:
-      .env/sra
-    networks:
-      - dns3l
-    dns_search: .
-    depends_on:
-      - db
 
   # stack external auth1..n
   auth1:
     image: ghcr.io/dns3l/auth
     container_name: dns3l-auth1
     restart: unless-stopped
+    build:
+      context: ../auth
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     # volumes:
     #   - .env/dex1.conf:/etc/dex.conf.yml:ro
     env_file:
@@ -89,7 +93,7 @@ services:
     dns_search: .
     healthcheck:
       disable: false
-      test: "curl -fsk -o /dev/null https://localhost:5554/auth/.well-known/openid-configuration"
+      test: [ "CMD-SHELL", "curl -fsk -o /dev/null https://localhost:5554/auth/.well-known/openid-configuration || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -99,12 +103,15 @@ services:
     image: ghcr.io/dns3l/dns3ld
     container_name: dns3l-dns3ld
     restart: unless-stopped
+    build:
+      context: ../dns3ld
+      dockerfile: docker/Dockerfile-dns3ld
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     volumes:
       - .env/dns3ld.conf:/etc/dns3ld.conf.yml:ro
-    # environment:
-    #   HTTP_PROXY:
-    #   HTTPS_PROXY:
-    #   NO_PROXY:
     env_file:
       .env/dns3ld
     networks:
@@ -112,10 +119,10 @@ services:
     dns_search: .
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       disable: false
-      test: "curl -fs -o /dev/null http://localhost:8880/api/info"
+      test: [ "CMD-SHELL", "curl -fs -o /dev/null http://localhost:8880/api/info || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 3
