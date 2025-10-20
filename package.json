@@ -1,12 +1,13 @@
 {
   "name": "dns3l",
-  "version": "1.2.0",
+  "version": "0.0.0-semantically-released",
   "scripts": {
     "semantic-pre-release": "npx semantic-release -e ./pre-release.js --debug",
     "semantic-release": "npx semantic-release -e ./release.js --debug"
   },
   "repository": "github:dns3l/dns3l",
   "private": true,
+  "packageManager": "yarn@4.10.3+sha512.c38cafb5c7bb273f3926d04e55e1d8c9dfa7d9c3ea1f36a4868fa028b9e5f72298f0b7f401ad5eb921749eb012eb1c3bb74bf7503df3ee43fd600d14a018266f",
   "release": {
     "branches": [
       "['+([0-9])?(.{+([0-9]),x}).x",
@@ -25,9 +26,9 @@
     "ci": true
   },
   "devDependencies": {
-    "@semantic-release/changelog": "^6.0.1",
-    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
-    "semantic-release": "^19.0.3"
+    "semantic-release": "^24.2.9"
   }
 }

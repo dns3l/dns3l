@@ -15,14 +15,9 @@ on:
     paths-ignore:
       - '**.md'
 
-env:
-  # BENDER_BOT: ${{ github.actor }}
-  BENDER_BOT: iaean-bot
-
 jobs:
   release:
     name: Build, release and publish
-    # needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -33,14 +28,16 @@ jobs:
     if: ${{ github.event_name == 'push' || github.event.pull_request.merged == true }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: "lts/*"
-          cache: npm
+          package-manager-cache: false
+      - name: Setup corepack
+        run: corepack enable
       - name: Setup semantic-release
         run: yarn install
       - name: Pre Release
@@ -58,11 +55,6 @@ jobs:
         run: git diff --exit-code VERSION
       - name: Publish GitHub Release on bump
         env:
-          # Note: Branch protection can impact pushes by this user...
-          GIT_AUTHOR_NAME: ${{ env.BENDER_BOT }}
-          GIT_AUTHOR_EMAIL: ${{ env.BENDER_BOT }}@users.noreply.github.com
-          GIT_COMMITTER_NAME: ${{ env.BENDER_BOT }}
-          GIT_COMMITTER_EMAIL: ${{ env.BENDER_BOT }}@users.noreply.github.com
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release -e ./release.js

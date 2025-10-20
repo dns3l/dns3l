@@ -106,3 +106,8 @@ dist
 
 # TernJS port file
 .tern-port
+
+# DevContainer
+.devcontainer/*.env
+.devcontainer/.env
+.devcontainer/env
