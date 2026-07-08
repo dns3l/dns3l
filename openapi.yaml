@@ -86,7 +86,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.2.0
+  version: 1.3.0
 
 externalDocs:
   description: Find out more about DNS3L
@@ -252,11 +252,20 @@ paths:
       parameters:
       - $ref: '#/components/parameters/crtSearch'
       - $ref: '#/components/parameters/caId'
+      - $ref: '#/components/parameters/pageLimit'
+      - $ref: '#/components/parameters/pageOffset'
       responses:
         default:
           $ref: '#/components/responses/Error'
         200:
           description: OK
+          headers:
+            Page-Limit:
+              $ref: '#/components/headers/Page-Limit'
+            Page-Offset:
+              $ref: '#/components/headers/Page-Offset'
+            Total-Count:
+              $ref: '#/components/headers/Total-Count'
           content:
             application/json:
               schema:
@@ -698,11 +707,20 @@ paths:
       operationId: getCerts
       parameters:
       - $ref: '#/components/parameters/crtSearch'
+      - $ref: '#/components/parameters/pageLimit'
+      - $ref: '#/components/parameters/pageOffset'
       responses:
         default:
           $ref: '#/components/responses/Error'
         200:
           description: OK
+          headers:
+            Page-Limit:
+              $ref: '#/components/headers/Page-Limit'
+            Page-Offset:
+              $ref: '#/components/headers/Page-Offset'
+            Total-Count:
+              $ref: '#/components/headers/Total-Count'
           content:
             application/json:
               schema:
@@ -853,6 +871,47 @@ components:
 
             `a*.acme.com` returns only certificates for `.acme.com` beginning with letter `a`
           value: '*.acme.com'
+    pageLimit:
+      name: limit
+      in: query
+      description: >
+        Maximum number of items to return.
+        If omitted or 0, all items are returned.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    pageOffset:
+      name: offset
+      in: query
+      description: >
+        Number of matching items to skip.
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+  headers:
+    Page-Limit:
+      description: >
+        Effective page size used for this response.
+        Present only if pagination was requested.
+      schema:
+        type: integer
+        minimum: 1
+    Page-Offset:
+      description: >
+        Effective offset used for this response.
+        Present only if pagination was requested.
+      schema:
+        type: integer
+        minimum: 0
+    Total-Count:
+      description: >
+        Total number of matching resources before pagination.
+        Present only if pagination was requested.
+      schema:
+        type: integer
+        minimum: 0
 
   schemas:
     INFO:
