@@ -274,6 +274,7 @@ paths:
       operationId: getCertsByCA
       parameters:
       - $ref: '#/components/parameters/crtSearch'
+      - $ref: '#/components/parameters/searchType'
       - $ref: '#/components/parameters/caId'
       - $ref: '#/components/parameters/pageLimit'
       - $ref: '#/components/parameters/pageOffset'
@@ -407,7 +408,7 @@ paths:
 
         ```
         { "code": 200,
-          "message": "Revocation successfull | failed | unavailable" }
+          "message": "Revocation successful | failed | unavailable" }
         ```
       x-badges:
         - color: red
@@ -730,6 +731,7 @@ paths:
       operationId: getCerts
       parameters:
       - $ref: '#/components/parameters/crtSearch'
+      - $ref: '#/components/parameters/searchType'
       - $ref: '#/components/parameters/pageLimit'
       - $ref: '#/components/parameters/pageOffset'
       responses:
@@ -861,7 +863,7 @@ components:
                 default: 404
               message:
                 type: string
-                example: Ressource not found
+                example: Resource not found
 
   parameters:
     crtName:
@@ -888,12 +890,25 @@ components:
         type: string
       examples:
         search:
-          summary: FQDN certificate name glob
+          summary: FQDN certificate name glob or suffix
           description: |
-            Shell style search glob or PCRE to control the returned result set. We try to avoid implementing pagination.
+            Search glob or FQDN suffix to control the returned result set.
 
-            `a*.acme.com` returns only certificates for `.acme.com` beginning with letter `a`
+            `a*.acme.com` returns only certificates for `.acme.com` beginning with letter `a`.
+            If suffix search is used `.acme.com` returns only certificates for `.acme.com`.
+            The leading dot `.` is optional and there are no characters with special meaning.
           value: '*.acme.com'
+    searchType:
+      name: type
+      in: query
+      description: Search type
+      required: false
+      schema:
+        type: string
+        default: pattern
+        enum:
+          - pattern
+          - suffix
     pageLimit:
       name: limit
       in: query
@@ -1019,8 +1034,9 @@ components:
       required: [ dns, ca, db, auth ]
       description: |
         Noneintrusive application level health check results of utilized foreign infrastructure
-        like DNS providers, ACME CA or DB providers. Health checks SHOULD run on request.
-        For failed checks a `reason` and a `message` MUST provided.
+        like DNS providers, ACME CA, DB or auth providers. Health checks SHOULD run on request.
+        If health checks were cached the age of the result MUST be provided.
+        For failed checks a error `message` MUST be provided.
       properties:
         dns:
           type: array
@@ -1104,7 +1120,7 @@ components:
         feature:
           type: array
           readOnly: true
-          description: Supported DNS Ressource Record Types
+          description: Supported DNS Resource Record Types
           items:
             type: string
             enum:
@@ -1428,7 +1444,7 @@ components:
 
     HEALTH:
       type: object
-      required: [ healthy, id, endpoint ]
+      required: [ healthy, id, endpoint, cached ]
       properties:
         healthy:
           type: boolean
@@ -1439,19 +1455,16 @@ components:
         endpoint:
           type: string
           description: Configured endpoint. Usually URL or Connect string.
-        reason:
-          type: string
-          enum:
-            - DNS
-            - TCP
-            - TLS
-            - AUTH
-            - APP
-          example: TCP
-          description: Classified error reason.
+        cached:
+          type: boolean
+          description: Health check result was cached
+        age:
+          type: integer
+          format: int32
+          description: Age of cached results in seconds
         message:
           type: string
-          description: Error message
+          description: Mandatory error message
           example: Ooops. TCP connect failed.
 
     PEM:
