@@ -135,7 +135,7 @@ paths:
         - read:info
       - apikey: []
 
-  /stat:
+  /status:
     get:
       tags:
       - stat
@@ -274,7 +274,7 @@ paths:
       operationId: getCertsByCA
       parameters:
       - $ref: '#/components/parameters/crtSearch'
-      - $ref: '#/components/parameters/searchType'
+      - $ref: '#/components/parameters/suffixSearch'
       - $ref: '#/components/parameters/caId'
       - $ref: '#/components/parameters/pageLimit'
       - $ref: '#/components/parameters/pageOffset'
@@ -731,7 +731,7 @@ paths:
       operationId: getCerts
       parameters:
       - $ref: '#/components/parameters/crtSearch'
-      - $ref: '#/components/parameters/searchType'
+      - $ref: '#/components/parameters/suffixSearch'
       - $ref: '#/components/parameters/pageLimit'
       - $ref: '#/components/parameters/pageOffset'
       responses:
@@ -890,25 +890,25 @@ components:
         type: string
       examples:
         search:
-          summary: FQDN certificate name glob or suffix
+          summary: Certificate name glob
           description: |
-            Search glob or FQDN suffix to control the returned result set.
-
+            Search glob to control the returned result set.
             `a*.acme.com` returns only certificates for `.acme.com` beginning with letter `a`.
-            If suffix search is used `.acme.com` returns only certificates for `.acme.com`.
-            The leading dot `.` is optional and there are no characters with special meaning.
-          value: '*.acme.com'
-    searchType:
-      name: type
+            In combination with suffix it operates on the suffix search result set.
+          value: 'a*.acme.com'
+    suffixSearch:
+      name: suffix
       in: query
-      description: Search type
+      description: Search for certificates
       required: false
       schema:
         type: string
-        default: pattern
-        enum:
-          - pattern
-          - suffix
+      examples:
+        search:
+          summary: Certificate name domain suffix
+          description: |
+            Domain suffix to control the returned result set. The leading dot `.` is optional.
+          value: '.acme.com'
     pageLimit:
       name: limit
       in: query
@@ -1031,7 +1031,7 @@ components:
 
     STAT:
       type: object
-      required: [ dns, ca, db, auth ]
+      required: [ dns, ca, db, auth, cached ]
       description: |
         Noneintrusive application level health check results of utilized foreign infrastructure
         like DNS providers, ACME CA, DB or auth providers. Health checks SHOULD run on request.
@@ -1067,6 +1067,15 @@ components:
           description: Configured or used local DNS resolvers
           items:
             $ref: '#/components/schemas/HEALTH'
+          readOnly: true
+        cached:
+          type: boolean
+          description: Health check result was cached
+          readOnly: true
+        age:
+          type: integer
+          format: int32
+          description: Age of cached results in seconds
           readOnly: true
 
     ROOT:
@@ -1444,7 +1453,7 @@ components:
 
     HEALTH:
       type: object
-      required: [ healthy, id, endpoint, cached ]
+      required: [ healthy, id, endpoint ]
       properties:
         healthy:
           type: boolean
@@ -1455,13 +1464,6 @@ components:
         endpoint:
           type: string
           description: Configured endpoint. Usually URL or Connect string.
-        cached:
-          type: boolean
-          description: Health check result was cached
-        age:
-          type: integer
-          format: int32
-          description: Age of cached results in seconds
         message:
           type: string
           description: Mandatory error message
