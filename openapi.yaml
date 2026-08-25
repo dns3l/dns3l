@@ -1423,7 +1423,10 @@ components:
         name:
           $ref: '#/components/schemas/CRT/properties/name'
         ca:
-          $ref: '#/components/schemas/CAS'
+          type: string
+          readOnly: true
+          description: CA ID of the certificate
+          example: le
         claimedBy:
           $ref: '#/components/schemas/CRT/properties/claimedBy'
         claimedOn:
