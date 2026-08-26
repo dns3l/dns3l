@@ -86,7 +86,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.4.0
+  version: 1.4.1
 
 externalDocs:
   description: Find out more about DNS3L
@@ -1423,7 +1423,10 @@ components:
         name:
           $ref: '#/components/schemas/CRT/properties/name'
         ca:
-          $ref: '#/components/schemas/CAS'
+          type: string
+          readOnly: true
+          description: CA ID of the certificate
+          example: le
         claimedBy:
           $ref: '#/components/schemas/CRT/properties/claimedBy'
         claimedOn:
